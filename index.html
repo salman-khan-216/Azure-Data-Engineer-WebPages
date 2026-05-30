@@ -1,0 +1,2918 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Data Engineering Interview Guide</title>
+<style>
+  /* ── Reset & Base ─────────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --navy:       #0F2D4E;
+    --blue:       #1565C0;
+    --blue-mid:   #1976D2;
+    --blue-light: #42A5F5;
+    --cyan:       #00BCD4;
+    --teal:       #00897B;
+    --orange:     #F57C00;
+    --purple:     #6A1B9A;
+    --green:      #2E7D32;
+    --red:        #C62828;
+    --bg:         #F0F4F8;
+    --surface:    #FFFFFF;
+    --surface2:   #F7FAFC;
+    --border:     #D1DEE8;
+    --text:       #1A2530;
+    --text-sec:   #4A5568;
+    --text-muted: #718096;
+    --radius:     10px;
+    --shadow-sm:  0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.05);
+    --shadow:     0 4px 16px rgba(0,0,0,.10), 0 1px 4px rgba(0,0,0,.06);
+    --shadow-lg:  0 8px 32px rgba(0,0,0,.12), 0 2px 8px rgba(0,0,0,.08);
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    font-size: 15px;
+    line-height: 1.7;
+    color: var(--text);
+    background: var(--bg);
+    min-height: 100vh;
+  }
+
+  /* ── Hero Header ──────────────────────────────────────── */
+  .hero {
+    background: linear-gradient(135deg, var(--navy) 0%, #1a4a7a 50%, var(--blue) 100%);
+    color: #fff;
+    padding: 56px 40px 48px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: -60px; right: -60px;
+    width: 300px; height: 300px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.04);
+  }
+  .hero::after {
+    content: '';
+    position: absolute;
+    bottom: -80px; left: 40%;
+    width: 400px; height: 400px;
+    border-radius: 50%;
+    background: rgba(66,165,245,.08);
+  }
+  .hero-inner { max-width: 900px; margin: 0 auto; position: relative; z-index: 1; }
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(255,255,255,.12);
+    border: 1px solid rgba(255,255,255,.2);
+    border-radius: 20px;
+    padding: 4px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,.85);
+    margin-bottom: 20px;
+  }
+  .hero h1 {
+    font-size: clamp(26px, 4vw, 40px);
+    font-weight: 800;
+    line-height: 1.15;
+    letter-spacing: -.5px;
+    margin-bottom: 12px;
+  }
+  .hero h1 span { color: var(--blue-light); }
+  .hero-sub {
+    font-size: 16px;
+    color: rgba(255,255,255,.72);
+    max-width: 560px;
+    margin-bottom: 32px;
+    line-height: 1.6;
+  }
+  .hero-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    background: rgba(255,255,255,.1);
+    border: 1px solid rgba(255,255,255,.18);
+    border-radius: 6px;
+    padding: 4px 12px;
+    font-size: 12.5px;
+    font-weight: 500;
+    color: rgba(255,255,255,.9);
+    backdrop-filter: blur(4px);
+  }
+
+  /* ── Layout ───────────────────────────────────────────── */
+  .layout {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 32px 24px 64px;
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 28px;
+    align-items: start;
+  }
+
+  /* ── Sidebar Nav ──────────────────────────────────────── */
+  .sidebar {
+    position: sticky;
+    top: 24px;
+  }
+  .sidebar-label {
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+    padding-left: 4px;
+  }
+  .nav-list { list-style: none; display: flex; flex-direction: column; gap: 3px; }
+  .nav-item button {
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-sec);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all .18s ease;
+  }
+  .nav-item button:hover { background: rgba(21,101,192,.07); color: var(--blue); }
+  .nav-item button.active { background: var(--blue); color: #fff; box-shadow: 0 2px 8px rgba(21,101,192,.35); }
+  .nav-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    background: currentColor;
+    opacity: .6;
+  }
+  .nav-item button.active .nav-dot { opacity: 1; }
+  .nav-count {
+    margin-left: auto;
+    font-size: 11px;
+    background: rgba(0,0,0,.08);
+    border-radius: 10px;
+    padding: 1px 7px;
+  }
+  .nav-item button.active .nav-count { background: rgba(255,255,255,.2); }
+
+  /* ── Main Content ─────────────────────────────────────── */
+  .main { min-width: 0; }
+  .section { display: none; }
+  .section.active { display: block; animation: fadeIn .25s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+  /* ── Section Header ───────────────────────────────────── */
+  .sec-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid var(--border);
+  }
+  .sec-icon {
+    width: 42px; height: 42px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+  .sec-title { font-size: 21px; font-weight: 700; color: var(--navy); }
+  .sec-desc { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
+
+  /* ── Question Cards ───────────────────────────────────── */
+  .q-card {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 12px;
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+    transition: box-shadow .2s, border-color .2s;
+  }
+  .q-card:hover { box-shadow: var(--shadow); border-color: #b0c9e0; }
+  .q-card.open { border-color: var(--blue-mid); box-shadow: var(--shadow); }
+
+  .q-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 16px 18px;
+    cursor: pointer;
+    user-select: none;
+    background: var(--surface);
+    transition: background .15s;
+  }
+  .q-header:hover { background: var(--surface2); }
+  .q-card.open .q-header { background: linear-gradient(90deg, #EBF3FF 0%, #F8FBFF 100%); }
+
+  .q-num {
+    width: 28px; height: 28px;
+    border-radius: 8px;
+    background: var(--blue);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .q-card.open .q-num { background: var(--blue); }
+
+  .q-title-wrap { flex: 1; min-width: 0; }
+  .q-title {
+    font-size: 14.5px;
+    font-weight: 600;
+    color: var(--text);
+    line-height: 1.45;
+  }
+  .q-card.open .q-title { color: var(--blue); }
+  .q-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
+  .q-tag {
+    font-size: 10.5px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 4px;
+    letter-spacing: .02em;
+  }
+
+  .q-chevron {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    margin-top: 3px;
+    transition: transform .25s, background .15s;
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+  .q-card.open .q-chevron { transform: rotate(180deg); background: var(--blue); color: #fff; }
+
+  /* ── Answer Body ──────────────────────────────────────── */
+  .q-body {
+    display: none;
+    padding: 0 18px 20px 18px;
+    border-top: 1.5px solid #DCE9F5;
+  }
+  .q-card.open .q-body { display: block; }
+
+  .answer-lead {
+    font-size: 14px;
+    color: var(--text-sec);
+    padding: 14px 0 10px;
+    line-height: 1.7;
+    font-style: italic;
+    border-bottom: 1px dashed #e0e9f2;
+    margin-bottom: 14px;
+  }
+
+  .q-body p {
+    font-size: 14px;
+    color: var(--text);
+    margin-bottom: 10px;
+    line-height: 1.75;
+  }
+
+  .q-body ul, .q-body ol {
+    padding-left: 0;
+    margin: 8px 0 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    list-style: none;
+  }
+  .q-body li {
+    font-size: 14px;
+    color: var(--text);
+    line-height: 1.7;
+    padding: 7px 12px 7px 38px;
+    border-radius: 7px;
+    background: var(--surface2);
+    border-left: 3px solid var(--blue-light);
+    position: relative;
+  }
+  .q-body li::before {
+    position: absolute;
+    left: 12px;
+    top: 8px;
+    font-size: 13px;
+  }
+  .q-body ul li::before { content: '▸'; color: var(--blue); }
+  .q-body ol { counter-reset: step-counter; }
+  .q-body ol li { border-left-color: var(--teal); counter-increment: step-counter; }
+  .q-body ol li::before { content: counter(step-counter); color: var(--teal); font-weight: 700; font-size: 12px; width: 18px; height: 18px; background: rgba(0,137,123,.12); border-radius: 50%; display: flex; align-items: center; justify-content: center; top: 9px; }
+
+  .q-body li strong {
+    color: var(--navy);
+    font-weight: 600;
+  }
+
+  /* ── Code Blocks ──────────────────────────────────────── */
+  .q-body pre {
+    background: #0D1B2A;
+    color: #CDD9E5;
+    border-radius: 8px;
+    padding: 16px 18px;
+    margin: 12px 0;
+    overflow-x: auto;
+    font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+    font-size: 12.5px;
+    line-height: 1.65;
+    border: 1px solid rgba(255,255,255,.06);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.04);
+  }
+  .q-body code {
+    font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+    font-size: 12.5px;
+    background: #E8F0FE;
+    color: #1A3A6B;
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid #C5D5F0;
+  }
+  .q-body pre code { background: none; border: none; padding: 0; color: inherit; font-size: inherit; }
+
+  /* ── Info Callouts ────────────────────────────────────── */
+  .callout {
+    border-radius: 8px;
+    padding: 12px 14px;
+    margin: 10px 0;
+    display: flex;
+    gap: 10px;
+    font-size: 13.5px;
+    line-height: 1.6;
+  }
+  .callout-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+  .callout.tip { background: #E8F5E9; border-left: 3px solid var(--green); color: #1B5E20; }
+  .callout.warn { background: #FFF8E1; border-left: 3px solid var(--orange); color: #E65100; }
+  .callout.info { background: #E3F2FD; border-left: 3px solid var(--blue); color: #0D47A1; }
+
+  /* ── Tag colors ───────────────────────────────────────── */
+  .tag-arch    { background: #E3F2FD; color: #1565C0; }
+  .tag-pattern { background: #E8EAF6; color: #283593; }
+  .tag-perf    { background: #E8F5E9; color: #2E7D32; }
+  .tag-debug   { background: #FFF8E1; color: #E65100; }
+  .tag-sec     { background: #FCE4EC; color: #880E4F; }
+  .tag-code    { background: #F3E5F5; color: #6A1B9A; }
+  .tag-cost    { background: #E0F7FA; color: #006064; }
+  .tag-fund    { background: #FBE9E7; color: #BF360C; }
+
+  /* ── Responsive ───────────────────────────────────────── */
+  @media (max-width: 720px) {
+    .layout { grid-template-columns: 1fr; }
+    .sidebar { position: static; }
+    .nav-list { flex-direction: row; flex-wrap: wrap; }
+    .hero { padding: 36px 20px 32px; }
+    .layout { padding: 20px 16px 48px; }
+  }
+
+  /* ── Scrollbar ────────────────────────────────────────── */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #B0C4D8; border-radius: 6px; }
+
+  /* ── Coding Section ───────────────────────────────────── */
+  .concept-group {
+    margin-bottom: 32px;
+  }
+  .concept-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+    padding: 0 2px;
+  }
+  .concept-label::after {
+    content: '';
+    flex: 1;
+    height: 1.5px;
+    background: var(--border);
+    border-radius: 2px;
+  }
+  .concept-label span {
+    background: var(--bg);
+    padding: 2px 10px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    white-space: nowrap;
+  }
+
+  /* Code tabs (SQL / PySpark side-by-side) */
+  .code-tabs {
+    margin: 12px 0 6px;
+  }
+  .code-tab-bar {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 0;
+  }
+  .code-tab-btn {
+    padding: 5px 14px;
+    border-radius: 6px 6px 0 0;
+    border: 1.5px solid var(--border);
+    border-bottom: none;
+    background: var(--bg);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    color: var(--text-muted);
+    letter-spacing: .02em;
+    transition: all .15s;
+  }
+  .code-tab-btn.active { background: #0D1B2A; color: #CDD9E5; border-color: #0D1B2A; }
+  .code-tab-btn.sql-btn.active { background: #1A3A5C; color: #90CAF9; border-color: #1A3A5C; }
+  .code-tab-btn.py-btn.active  { background: #1A2C1A; color: #A5D6A7; border-color: #1A2C1A; }
+
+  .code-pane { display: none; }
+  .code-pane.active { display: block; }
+
+  .code-pane pre {
+    border-radius: 0 6px 6px 6px !important;
+    margin-top: 0 !important;
+  }
+  .sql-pane pre  { background: #0F1F2E !important; border-top: 3px solid #1976D2 !important; }
+  .py-pane pre   { background: #0F1F0F !important; border-top: 3px solid #388E3C !important; }
+
+  /* Side-by-side layout for concept sets */
+  .split-grid {
+    /* display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 12px; */
+    
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  @media (max-width: 820px) { .split-grid { grid-template-columns: 1fr; } }
+
+  .split-pane {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .split-pane-header {
+    padding: 10px 14px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .04em;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+  .split-pane.sql-pane-card .split-pane-header  { background: #1A3A5C; color: #90CAF9; }
+  .split-pane.py-pane-card  .split-pane-header  { background: #1A2C1A; color: #A5D6A7; }
+  .split-pane pre {
+    margin: 0 !important;
+    border-radius: 0 !important;
+    border: none !important;
+    font-size: 12px !important;
+  }
+  .split-pane.sql-pane-card pre { background: #0F1F2E !important; }
+  .split-pane.py-pane-card  pre { background: #0F1F0F !important; }
+
+  .schema-box {
+    background: var(--surface2);
+    border: 1.5px dashed var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    margin: 10px 0 14px;
+    font-size: 13px;
+    color: var(--text-sec);
+  }
+  .schema-box strong { color: var(--navy); }
+  .schema-box code { font-size: 12px; background: #E8F0FE; color: #1A3A6B; padding: 1px 5px; border-radius: 3px; border: 1px solid #C5D5F0; }
+
+</style>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+</head>
+<body>
+
+<!-- ── HERO ── -->
+<header class="hero">
+  <div class="hero-inner">
+    <div class="hero-badge">&#x1F4CB; Interview Prep </div> 
+    <div class="hero-badge">&#x1F4CB; <a href="databricks.html" style="text-decoration: none; color: inherit;">Databricks</a> </div> 
+    <h1>Azure <span>Data Engineering</span><br>Interview Guide</h1>
+    <p class="hero-sub">Comprehensive Q&A reference covering architecture patterns, pipeline design, performance tuning, and security best practices.</p>
+    <div class="hero-chips">
+      <span class="chip">&#x2601;&#xFE0F; ADF</span>
+      <span class="chip">&#x1F4CA; Synapse</span>
+      <span class="chip">&#x1F525; Databricks</span>
+      <span class="chip">&#x26A1; PySpark</span>
+      <span class="chip">&#x1F4C0; Delta Lake</span>
+      <span class="chip">&#x1F5C4; SQL</span>
+      <span class="chip">&#x1F512; Security</span>
+      <span class="chip">&#x1F4BB; Coding</span>
+    </div>
+  </div>
+</header>
+
+<!-- ── LAYOUT ── -->
+<div class="layout">
+
+  <!-- Sidebar Nav -->
+  <aside class="sidebar">
+    <p class="sidebar-label">Categories</p>
+    <ul class="nav-list">
+      <li class="nav-item"><button onclick="show('general')" class="active"><span class="nav-dot"></span>General & Design<span class="nav-count">6</span></button></li>
+      <li class="nav-item"><button onclick="show('adf')"><span class="nav-dot"></span>Azure Data Factory<span class="nav-count">6</span></button></li>
+      <li class="nav-item"><button onclick="show('synapse')"><span class="nav-dot"></span>Synapse Analytics<span class="nav-count">6</span></button></li>
+      <li class="nav-item"><button onclick="show('databricks')"><span class="nav-dot"></span>Databricks<span class="nav-count">5</span></button></li>
+      <li class="nav-item"><button onclick="show('pyspark')"><span class="nav-dot"></span>PySpark & Spark<span class="nav-count">10</span></button></li>
+      <li class="nav-item"><button onclick="show('delta')"><span class="nav-dot"></span>Delta Lake<span class="nav-count">5</span></button></li>
+      <li class="nav-item"><button onclick="show('sql')"><span class="nav-dot"></span>SQL<span class="nav-count">6</span></button></li>
+      <li class="nav-item"><button onclick="show('security')"><span class="nav-dot"></span>Security & Secrets<span class="nav-count">5</span></button></li>
+      <li class="nav-item"><button onclick="show('coding')"><span class="nav-dot"></span>&#x1F4BB; Coding<span class="nav-count">10</span></button></li>
+    </ul>
+  </aside>
+
+  <!-- Main -->
+  <main class="main">
+
+<!-- ════════════════════════════════════════════════════════
+     GENERAL & SYSTEM DESIGN
+═══════════════════════════════════════════════════════════ -->
+<div id="general" class="section active">
+  <div class="sec-header">
+    <div class="sec-icon" style="background:#EBF3FF">&#x1F3D7;</div>
+    <div><div class="sec-title">General & System Design</div><div class="sec-desc">Architecture patterns, scaling, cost optimization, debugging</div></div>
+  </div>
+
+  <!-- Q1 -->
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)">
+      <div class="q-num">1</div>
+      <div class="q-title-wrap">
+        <div class="q-title">How would you design a scalable system / data warehouse to handle millions of requests per day?</div>
+        <div class="q-tags"><span class="q-tag tag-arch">Architecture</span><span class="q-tag tag-pattern">Pattern</span></div>
+      </div>
+      <div class="q-chevron">▼</div>
+    </div>
+    <div class="q-body">
+      <p>A scalable data system is built in layers, each with a specific role. The standard approach in Azure is the <strong>Medallion Lakehouse architecture</strong>:</p>
+      <ul>
+        <li><strong>Ingestion Layer:</strong> ADF, Event Hubs, or Kafka pull data from diverse sources. The goal is to decouple sources from processing so either side can change independently.</li>
+        <li><strong>Bronze (Raw) Layer:</strong> Data lands as-is in ADLS Gen2 — no transformation. This is your immutable source of truth and replay foundation.</li>
+        <li><strong>Silver Layer:</strong> Data is cleaned, validated, deduplicated, and joined. Runs in Databricks or Synapse Spark, written in Delta format for ACID compliance.</li>
+        <li><strong>Gold Layer:</strong> Business-aggregated, query-ready tables served via Synapse Dedicated Pool or Serverless SQL for BI tools like Power BI.</li>
+        <li><strong>Orchestration:</strong> ADF or Synapse Pipelines trigger each stage with retry logic, dependency management, and monitoring built in.</li>
+        <li><strong>Scaling:</strong> Databricks auto-scales clusters; Synapse DWUs scale on demand; ADLS is inherently elastic — pay for what you use.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Q2 -->
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)">
+      <div class="q-num">2</div>
+      <div class="q-title-wrap">
+        <div class="q-title">What are the differences between horizontal and vertical scaling? When would you use each?</div>
+        <div class="q-tags"><span class="q-tag tag-fund">Fundamentals</span></div>
+      </div>
+      <div class="q-chevron">▼</div>
+    </div>
+    <div class="q-body">
+      <p><strong>Vertical scaling (Scale Up)</strong> means adding more CPU, RAM, or disk to the same machine. Simpler — no code changes — but has a hard ceiling and creates a single point of failure.</p>
+      <p><strong>Horizontal scaling (Scale Out)</strong> means adding more machines or nodes. Requires distributed systems thinking but offers virtually unlimited ceiling.</p>
+      <ul>
+        <li><strong>Use vertical scaling</strong> for relational DBs that are hard to shard, or for quick wins on legacy systems.</li>
+        <li><strong>Use horizontal scaling</strong> for Spark jobs, Kafka brokers, ADLS workloads — anywhere data partitions well across nodes.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Q3 -->
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)">
+      <div class="q-num">3</div>
+      <div class="q-title-wrap">
+        <div class="q-title">How would you design a cost-optimized batch pipeline in Azure for large-scale daily processing?</div>
+        <div class="q-tags"><span class="q-tag tag-cost">Cost Optimization</span></div>
+      </div>
+      <div class="q-chevron">▼</div>
+    </div>
+    <div class="q-body">
+      <ul>
+        <li><strong>Spot/low-priority Databricks clusters</strong> — up to 90% cheaper for non-time-critical batch jobs. Add retry policies since spot nodes can be evicted.</li>
+        <li><strong>Pause Synapse Dedicated Pool</strong> when not in use — you only pay for DWUs when the pool is running. Use ADF schedules to auto-pause post-job.</li>
+        <li><strong>Process only incremental data</strong> using watermarks or CDC — avoid full-table scans every night.</li>
+        <li><strong>ADLS lifecycle policies</strong> to automatically tier cold data to Cool or Archive storage.</li>
+        <li><strong>Compress output files</strong> using Parquet + Snappy to reduce storage and I/O costs.</li>
+        <li><strong>Right-size clusters:</strong> profile job memory and CPU, pick the smallest cluster that fits.</li>
+        <li><strong>Azure Reserved Instances</strong> for always-on workloads — commit 1-3 years for up to 40% savings.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Q4 -->
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)">
+      <div class="q-num">4</div>
+      <div class="q-title-wrap">
+        <div class="q-title">How would you process incremental data without creating duplicates (Idempotency)?</div>
+        <div class="q-tags"><span class="q-tag tag-pattern">Pattern</span></div>
+      </div>
+      <div class="q-chevron">▼</div>
+    </div>
+    <div class="q-body">
+      <p>An idempotent pipeline produces the same result whether it runs once or ten times. This is critical because pipelines fail and need to re-run.</p>
+      <ul>
+        <li><strong>Watermark table:</strong> Store the last processed timestamp or ID. Each run reads only rows newer than the watermark. After a successful load, update the watermark.</li>
+        <li><strong>Delta Lake MERGE (UPSERT):</strong> Match on a unique business key — update if the row exists, insert if new. Naturally handles duplicates from re-runs.</li>
+        <li><strong>Partition overwrite:</strong> Write new data to a date partition, overwrite that partition on re-run. Avoids duplicates by design when partitioned by ingestion date.</li>
+        <li><strong>Dedup in PySpark:</strong> <code>df.dropDuplicates(["id", "updated_at"])</code> before writing.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Q5 -->
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)">
+      <div class="q-num">5</div>
+      <div class="q-title-wrap">
+        <div class="q-title">A pipeline completed successfully but produced incorrect data. How would you debug it?</div>
+        <div class="q-tags"><span class="q-tag tag-debug">Debugging</span></div>
+      </div>
+      <div class="q-chevron">▼</div>
+    </div>
+    <div class="q-body">
+      <p>This is the hardest class of bug — the system thinks everything succeeded. Work through these steps:</p>
+      <ol>
+        <li><strong>Narrow down the layer.</strong> Check Bronze → Silver → Gold sequentially. At which layer does data first look wrong?</li>
+        <li><strong>Check transformation logic.</strong> Are joins on the wrong key? Is a GROUP BY missing a column? Are window functions using the right partition/order?</li>
+        <li><strong>Check data quality at source.</strong> Was the source data itself corrupt, late-arriving, or duplicated?</li>
+        <li><strong>Check watermark/filter logic.</strong> Did the incremental filter cut off valid records or include old ones twice?</li>
+        <li><strong>Check date/timezone issues.</strong> UTC vs local time bugs are extremely common.</li>
+        <li><strong>Enable row counts + checksums.</strong> Add audit columns at each layer — <code>row_count</code>, <code>checksum</code>, <code>load_timestamp</code> — so discrepancies become visible.</li>
+        <li><strong>Delta Lake time travel:</strong> <code>SELECT * FROM table VERSION AS OF N</code> to compare data before and after a specific run.</li>
+      </ol>
+    </div>
+  </div>
+
+  <!-- Q6 -->
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)">
+      <div class="q-num">6</div>
+      <div class="q-title-wrap">
+        <div class="q-title">A data pipeline is failing intermittently in production. How would you debug and fix it?</div>
+        <div class="q-tags"><span class="q-tag tag-debug">Debugging</span></div>
+      </div>
+      <div class="q-chevron">▼</div>
+    </div>
+    <div class="q-body">
+      <p>Intermittent failures do not always reproduce. Think in categories:</p>
+      <ul>
+        <li><strong>Infrastructure/transient:</strong> Network timeouts, API rate limits, throttling from source. Fix: retry policies with exponential backoff.</li>
+        <li><strong>Data-driven:</strong> A bad record arrives on some runs (null in a non-nullable field, unexpected schema). Fix: schema validation + dead-letter queues.</li>
+        <li><strong>Resource contention:</strong> Cluster runs OOM on days when data volume spikes. Fix: monitor run sizes, auto-scale, or increase shuffle partitions dynamically.</li>
+        <li><strong>Concurrency:</strong> Two pipeline runs overlap and conflict on a shared table. Fix: set pipeline concurrency to 1 or use table-level locks.</li>
+      </ul>
+      <div class="callout info"><span class="callout-icon">&#x1F6E0;</span> <div>Tools: <strong>ADF Monitor</strong> → Pipeline Runs → Activity runs. <strong>Databricks</strong> Job Run history for Spark logs. <strong>Azure Monitor + Log Analytics</strong> for pattern analysis across runs.</div></div>
+    </div>
+  </div>
+</div><!-- /general -->
+
+<!-- ════════════════════════════════════════════════════════
+     AZURE DATA FACTORY
+═══════════════════════════════════════════════════════════ -->
+<div id="adf" class="section">
+  <div class="sec-header">
+    <div class="sec-icon" style="background:#EAF4FB">&#x2601;&#xFE0F;</div>
+    <div><div class="sec-title">Azure Data Factory</div><div class="sec-desc">Integration runtime, pipelines, parameterization, error handling</div></div>
+  </div>
+
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">1</div><div class="q-title-wrap"><div class="q-title">Under what networking conditions must you use a Self-Hosted Integration Runtime (SHIR) instead of Azure IR?</div><div class="q-tags"><span class="q-tag tag-arch">Networking</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-body">
+      <p>The Integration Runtime (IR) is the compute engine that moves data in ADF. <strong>Azure IR</strong> is Microsoft-managed, lives in the cloud, and works for cloud-to-cloud transfers. It requires sources reachable over the public internet.</p>
+      <p>Use <strong>Self-Hosted IR (SHIR)</strong> — a Windows agent installed on a machine in your own network — when:</p>
+      <ul>
+        <li>Data source is <strong>on-premises</strong> (SQL Server, Oracle, SAP) behind a corporate firewall.</li>
+        <li>Source is in a <strong>private VNet</strong> with no public endpoint and no peering to ADF's managed VNet.</li>
+        <li>You need to copy data <strong>between two private networks</strong>.</li>
+        <li>Source requires a <strong>local driver</strong> (ODBC, Oracle client) installed on the IR machine.</li>
+      </ul>
+      <div class="callout tip"><span class="callout-icon">&#x2705;</span><div>The SHIR machine initiates <strong>outbound</strong> connections to ADF's cloud service over port 443 — no inbound firewall rules required.</div></div>
+    </div>
+  </div>
+
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">2</div><div class="q-title-wrap"><div class="q-title">How do you implement a Watermark-based incremental load in ADF to avoid re-processing old data?</div><div class="q-tags"><span class="q-tag tag-pattern">Pattern</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-body">
+      <p>A watermark is a "last processed" marker — usually a timestamp or integer ID. Each run fetches only records newer than this marker.</p>
+      <ol>
+        <li>Create a <strong>watermark table</strong> in Azure SQL: <code>CREATE TABLE watermark (table_name VARCHAR, last_value DATETIME)</code></li>
+        <li><strong>Lookup Activity</strong> — read the current watermark value for the target table.</li>
+        <li><strong>Lookup Activity</strong> — read the current MAX value in source: <code>SELECT MAX(updated_at) FROM orders</code></li>
+        <li><strong>Copy Activity</strong> — source query uses both values: <code>WHERE updated_at > old_wm AND updated_at &lt;= new_max</code></li>
+        <li><strong>Stored Procedure Activity</strong> — after successful copy, update the watermark to the new max value.</li>
+      </ol>
+      <div class="callout warn"><span class="callout-icon">&#x26A0;&#xFE0F;</span><div>Capturing the new max <em>before</em> the copy starts prevents late-arriving records from being missed on subsequent runs.</div></div>
+    </div>
+  </div>
+
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">3</div><div class="q-title-wrap"><div class="q-title">What is the difference between Copy Activity and Data Flow in ADF?</div><div class="q-tags"><span class="q-tag tag-fund">Core Concept</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-body">
+      <p><strong>Copy Activity</strong> is a lightweight, high-speed data movement tool. It moves data from source to sink with minimal transformation — column renaming, basic type casting. It does <em>not</em> spin up a Spark cluster; it runs on the Integration Runtime directly. Very fast, very cheap. Use it for ingestion — landing raw files in ADLS.</p>
+      <p><strong>Data Flow (Mapping Data Flow)</strong> is a visual, code-free transformation engine backed by Apache Spark. You can join, aggregate, pivot, derive columns, parse JSON, and split streams — all via a drag-and-drop UI. ADF compiles your Data Flow into Spark code and runs it on an auto-created cluster.</p>
+      <div class="callout warn"><span class="callout-icon">&#x1F4B8;</span><div>Data Flow is significantly more expensive — it spins up Spark compute. Only use it when transformation complexity justifies it. For simple copy-and-land, always use Copy Activity.</div></div>
+    </div>
+  </div>
+
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">4</div><div class="q-title-wrap"><div class="q-title">How do you implement parameterization in ADF pipelines?</div><div class="q-tags"><span class="q-tag tag-pattern">Best Practice</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-body">
+      <ul>
+        <li><strong>Pipeline parameters:</strong> Defined at pipeline level. Passed when triggering via schedule trigger, event trigger, or Execute Pipeline activity.</li>
+        <li><strong>Dataset parameters:</strong> Make dataset properties dynamic — table name, file path, container name. Reference with <code>@dataset().paramName</code>.</li>
+        <li><strong>Linked Service parameters:</strong> Parameterize connection strings so one linked service handles multiple environments (dev/prod).</li>
+        <li><strong>Global parameters:</strong> Set once at ADF level, available across all pipelines — useful for environment-level config like storage account names.</li>
+        <li><strong>ForEach + parameterized pipeline:</strong> Build a config-driven framework — store table names in a control config, loop with ForEach, call a generic pipeline per table with the table name as a parameter.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">5</div><div class="q-title-wrap"><div class="q-title">Describe how error handling and retry mechanisms work in ADF.</div><div class="q-tags"><span class="q-tag tag-debug">Reliability</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-body">
+      <ul>
+        <li><strong>Activity retry:</strong> Each activity has configurable retry count (default 0) and retry interval. ADF re-runs the failed activity N times before marking it failed. Use for transient failures like network blips and throttling.</li>
+        <li><strong>On Failure path:</strong> Each activity has Success, Failure, and Completion output paths. Connect activities on the Failure path to trigger cleanup, send alerts (Web Activity to Teams webhook), or log errors to a SQL table.</li>
+        <li><strong>Timeout:</strong> Set timeouts on long-running activities to prevent hanging pipelines from consuming resources indefinitely.</li>
+        <li><strong>Fault tolerance in Copy Activity:</strong> Skip incompatible rows and log them to a fault file in ADLS instead of failing the entire copy. Configure under Copy Activity → Settings → Fault tolerance.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">6</div><div class="q-title-wrap"><div class="q-title">How would you securely migrate on-premises SQL Server data into ADLS Gen2?</div><div class="q-tags"><span class="q-tag tag-sec">Security</span><span class="q-tag tag-arch">Migration</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-body">
+      <ol>
+        <li>Install <strong>SHIR</strong> on a machine in the on-prem network that can reach the SQL Server.</li>
+        <li>Create a <strong>Linked Service</strong> in ADF pointing to on-prem SQL Server via the SHIR. Store the password in <strong>Azure Key Vault</strong> — never hardcode credentials.</li>
+        <li>Use <strong>Managed Identity</strong> for ADF to authenticate to ADLS Gen2 — no storage account keys needed.</li>
+        <li>Configure a <strong>Copy Activity</strong> with the on-prem SQL linked service as source and ADLS Gen2 as sink. Use Parquet format for storage efficiency.</li>
+        <li>Ensure <strong>encryption in transit:</strong> SQL Server uses TLS, ADLS uses HTTPS, SHIR to ADF cloud uses TLS over port 443.</li>
+        <li>Implement <strong>incremental load</strong> using watermarks or SQL Server Change Tracking to avoid moving the full dataset on every run.</li>
+        <li>For high-security requirements, use <strong>ExpressRoute or VPN</strong> for private connectivity instead of public internet traversal.</li>
+      </ol>
+    </div>
+  </div>
+</div><!-- /adf -->
+
+<!-- ════════════════════════════════════════════════════════
+     SYNAPSE
+═══════════════════════════════════════════════════════════ -->
+<div id="synapse" class="section">
+  <div class="sec-header">
+    <div class="sec-icon" style="background:#EDE7F6">&#x1F4CA;</div>
+    <div><div class="sec-title">Azure Synapse Analytics</div><div class="sec-desc">Distribution, HNS, Serverless vs Dedicated, workload management, security</div></div>
+  </div>
+
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">1</div><div class="q-title-wrap"><div class="q-title">When would you choose Hash distribution over Round-Robin or Replicated tables in a Synapse Dedicated Pool?</div><div class="q-tags"><span class="q-tag tag-perf">Distribution</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-body">
+      <p>Synapse Dedicated Pool distributes data across <strong>60 distributions</strong> (physical storage units). How data lands across those distributions determines query performance.</p>
+      <ul>
+        <li><strong>Hash distribution:</strong> Rows with the same hash column value always land on the same distribution. Use on large fact tables (millions+ rows) frequently joined on the same column (e.g., <code>customer_id</code>). When two hash-distributed tables are joined on the same column, no data movement is required — a massive performance gain.</li>
+        <li><strong>Round-Robin:</strong> Rows distributed evenly across all 60 distributions sequentially. Very fast writes. Use for staging tables, temp tables, or tables without a clear join key. Bad for query performance — joins always require data movement.</li>
+        <li><strong>Replicated:</strong> A full copy of the table on every compute node. Use only for small dimension tables (&lt;2GB). Eliminates all shuffle on joins with fact tables. Avoid for large tables — 60x storage cost and slow writes on updates.</li>
+      </ul>
+      <div class="callout info"><span class="callout-icon">&#x1F4A1;</span><div>Rule of thumb: large table + frequent joins → <strong>Hash</strong> on join key. Small dimension table → <strong>Replicate</strong>. Staging area → <strong>Round-Robin</strong>.</div></div>
+    </div>
+  </div>
+
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">2</div><div class="q-title-wrap"><div class="q-title">What is the Hierarchical Namespace (HNS) in ADLS Gen2 and how does it optimize big data operations?</div><div class="q-tags"><span class="q-tag tag-fund">Fundamentals</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-body">
+      <p>Regular Azure Blob Storage is a flat namespace — "folders" are just prefixes in blob names. Operations like renaming or deleting a "folder" require enumerating and updating every blob with that prefix — O(n) operations at scale.</p>
+      <p>ADLS Gen2 with HNS enabled creates a <strong>true hierarchical file system</strong> like HDFS. Directories are first-class objects with their own metadata. This enables:</p>
+      <ul>
+        <li><strong>Atomic rename:</strong> Renaming a directory is a single metadata operation — O(1). Critical for Spark commit operations, which write to a temp location then rename to final.</li>
+        <li><strong>Atomic delete:</strong> Delete an entire directory in one operation rather than looping through every file individually.</li>
+        <li><strong>POSIX-compliant ACLs:</strong> Set read, write, and execute permissions at the directory level, not just file level.</li>
+        <li><strong>Performance at scale:</strong> Dramatically faster directory-level operations when you have millions of files.</li>
+      </ul>
+      <div class="callout warn"><span class="callout-icon">&#x26A0;&#xFE0F;</span><div>Always enable HNS when creating storage accounts for data lake workloads. <strong>It cannot be enabled after account creation.</strong></div></div>
+    </div>
+  </div>
+
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">3</div><div class="q-title-wrap"><div class="q-title">Explain Synapse Serverless SQL Pools versus Dedicated SQL Pools — when do you use each?</div><div class="q-tags"><span class="q-tag tag-arch">Architecture</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-body">
+      <p><strong>Serverless SQL Pool:</strong> No provisioned compute. Query files directly in ADLS (Parquet, CSV, JSON, Delta) using T-SQL with <code>OPENROWSET</code> or external tables. Pay per TB scanned. Great for ad-hoc exploration, data discovery, and building views for Power BI on top of the data lake. Limitation: no indexes or materialized aggregates — every query scans files.</p>
+      <p><strong>Dedicated SQL Pool:</strong> You provision DWUs — dedicated compute and columnar storage (CCI). Supports indexes, statistics, materialized views, and workload management. Pay per DWU-hour. Best for repeated, complex BI queries with multi-user concurrency and SLA requirements.</p>
+      <div class="callout tip"><span class="callout-icon">&#x1F4CC;</span><div>Common pattern: <strong>Serverless SQL</strong> for the Silver lake layer (ad-hoc, flexible exploration) | <strong>Dedicated Pool</strong> for the Gold layer (performance-critical BI dashboards).</div></div>
+    </div>
+  </div>
+
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">4</div><div class="q-title-wrap"><div class="q-title">What is the difference between PolyBase and COPY INTO in Synapse?</div><div class="q-tags"><span class="q-tag tag-pattern">Data Loading</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-body">
+      <p>Both load data from ADLS into a Dedicated Pool table, but they differ significantly:</p>
+      <p><strong>PolyBase</strong> is the older approach. Requires creating an External Data Source, External File Format, and External Table as separate objects before loading. More verbose setup, supports fewer authentication methods. Still functional but is the legacy path.</p>
+      <p><strong>COPY INTO</strong> is the modern, preferred approach. A single T-SQL statement handles everything. Supports more file formats (CSV, Parquet, ORC), more authentication methods (SAS, Managed Identity, Service Principal), and handles bad rows gracefully with an <code>ERRORFILE</code> option.</p>
+      <pre><code>COPY INTO dbo.orders
+FROM 'https://mystorageacct.dfs.core.windows.net/container/orders/*.parquet'
+WITH (FILE_TYPE = 'PARQUET', CREDENTIAL = (IDENTITY = 'Managed Identity'));</code></pre>
+    </div>
+  </div>
+
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">5</div><div class="q-title-wrap"><div class="q-title">What is workload management in Synapse and why is it important?</div><div class="q-tags"><span class="q-tag tag-perf">Performance</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-body">
+      <p>Without workload management, a single heavy query can starve all other users of DWU resources. Synapse workload management has three components:</p>
+      <ul>
+        <li><strong>Workload groups:</strong> Define resource pools with min/max DWU percentages — e.g., ETL jobs get 50%, dashboards get 30%, ad-hoc gets 20%.</li>
+        <li><strong>Workload classifiers:</strong> Route specific users, labels, or query patterns to a workload group — e.g., <code>etl_user</code> → ETL group; label <code>'dashboard'</code> → Dashboard group.</li>
+        <li><strong>Workload importance:</strong> HIGH/MEDIUM/LOW priority within the queue. High-importance queries run first when resources are contested.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">6</div><div class="q-title-wrap"><div class="q-title">How do you secure data in Azure Synapse Analytics?</div><div class="q-tags"><span class="q-tag tag-sec">Security</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-body">
+      <ul>
+        <li><strong>Network:</strong> Deploy Synapse in a managed VNet. Use Private Endpoints to block public internet exposure. Apply Synapse Firewall rules to whitelist trusted IP ranges.</li>
+        <li><strong>Authentication:</strong> Azure AD integration with AAD users and groups — avoid SQL logins where possible. Use Service Principals for automated pipelines.</li>
+        <li><strong>Authorization:</strong> RBAC at the workspace level (Owner, Contributor, Reader). SQL-level roles. Column-Level Security and Row-Level Security for fine-grained access.</li>
+        <li><strong>Dynamic Data Masking (DDM):</strong> Mask sensitive columns (SSN, credit card) for unauthorized users at query time. Data is not changed on disk — masking is applied at query time only.</li>
+        <li><strong>Encryption:</strong> Data at rest encrypted with Azure-managed keys or Customer-Managed Keys (CMK) in Key Vault. All data in transit uses TLS.</li>
+        <li><strong>Auditing:</strong> Enable Synapse auditing to write audit logs to a Storage Account or Log Analytics for compliance and forensic investigation.</li>
+      </ul>
+    </div>
+  </div>
+</div><!-- /synapse -->
+
+<!-- ════════════════════════════════════════════════════════
+     DATABRICKS
+═══════════════════════════════════════════════════════════ -->
+<div id="databricks" class="section">
+  <div class="sec-header">
+    <div class="sec-icon" style="background:#FFF3E0">&#x1F525;</div>
+    <div><div class="sec-title">Azure Databricks</div><div class="sec-desc">OOM troubleshooting, monitoring, schema management, ETL frameworks</div></div>
+  </div>
+
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">1</div><div class="q-title-wrap"><div class="q-title">A Databricks job is failing with Out-of-Memory (OOM) errors. How would you troubleshoot it?</div><div class="q-tags"><span class="q-tag tag-debug">Troubleshooting</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-body">
+      <ol>
+        <li><strong>Identify where OOM occurs:</strong> Driver OOM → you're collecting too much data to the driver (<code>collect()</code>, <code>toPandas()</code>, large broadcast). Executor OOM → individual tasks are too memory-heavy.</li>
+        <li><strong>Check Spark UI:</strong> Go to Stages → look for tasks with very large shuffle read/write or skewed task sizes.</li>
+        <li><strong>Fix data skew:</strong> Add salting for skewed joins, or enable AQE (<code>spark.sql.adaptive.enabled=true</code>).</li>
+        <li><strong>Increase shuffle partitions:</strong> Default is 200. For large data, increase to 400–1000 to reduce per-partition size.</li>
+        <li><strong>Upgrade cluster node type</strong> to increase executor memory, or increase <code>spark.executor.memory</code> in cluster config.</li>
+        <li><strong>Reduce data being processed:</strong> Push filters earlier. Use <code>select()</code> to drop unused columns before joins.</li>
+        <li><strong>Replace Python UDFs</strong> with native Spark functions — UDFs serialize data to a Python process, consuming extra memory.</li>
+        <li><strong>Avoid <code>collect()</code></strong> on large DataFrames. Sample or aggregate first before pulling data to the driver.</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">2</div><div class="q-title-wrap"><div class="q-title">How do you monitor and troubleshoot failed jobs in Azure Databricks?</div><div class="q-tags"><span class="q-tag tag-debug">Monitoring</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-body">
+      <ul>
+        <li><strong>Databricks Jobs UI:</strong> Workflows → Jobs → click the failed run to see task-level status and error messages.</li>
+        <li><strong>Cluster logs:</strong> Check driver <code>stdout</code>/<code>stderr</code> for Python exceptions. Check event log for cluster-level issues (node eviction, OOM kill).</li>
+        <li><strong>Spark UI:</strong> Access via Cluster → Spark UI. Check failed stages, task duration distribution, shuffle stats, and GC time.</li>
+        <li><strong>Log Analytics integration:</strong> Configure Databricks to ship logs to Azure Log Analytics. Query with KQL to identify patterns across multiple failed runs.</li>
+        <li><strong>Alert on failure:</strong> In Databricks Jobs, set email or webhook alerts on failure. Integrate with Azure Monitor for SLA tracking.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">3</div><div class="q-title-wrap"><div class="q-title">What is the difference between schema inference and predefined schema in PySpark? Which is better in production?</div><div class="q-tags"><span class="q-tag tag-pattern">Schema</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-body">
+      <p><strong>Schema inference</strong> means Spark reads a sample of the data and auto-detects column names and types. Convenient in development, but problematic in production:</p>
+      <ul>
+        <li><strong>Expensive:</strong> requires an extra scan of the data before processing begins.</li>
+        <li><strong>Unreliable:</strong> <code>inferSchema</code> on CSV might read <code>"123"</code> as integer, but rows later with <code>"123abc"</code> fail or produce wrong types.</li>
+        <li><strong>Non-deterministic:</strong> schema can silently change if source data changes, breaking downstream code without any obvious error.</li>
+      </ul>
+      <p><strong>Predefined schema (StructType)</strong> — you explicitly declare every column name and type before reading:</p>
+      <pre><code>schema = StructType([
+    StructField("order_id", IntegerType(), False),
+    StructField("amount", DoubleType(), True),
+    StructField("created_at", TimestampType(), True)
+])
+df = spark.read.schema(schema).json("path/to/data")</code></pre>
+      <div class="callout tip"><span class="callout-icon">&#x2705;</span><div>Always use predefined schema in production. It's faster, predictable, and forces you to explicitly handle schema changes — which is exactly what you want in a controlled pipeline.</div></div>
+    </div>
+  </div>
+
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">4</div><div class="q-title-wrap"><div class="q-title">How would you build a reusable Python ETL framework in Databricks?</div><div class="q-tags"><span class="q-tag tag-arch">Architecture</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-body">
+      <ul>
+        <li><strong>Config-driven:</strong> Store pipeline configs in JSON, YAML, or a control SQL table. Code reads config at runtime — add a new pipeline by adding a config row, not writing new code.</li>
+        <li><strong>Separate concerns:</strong> Organize into <code>readers/</code>, <code>transformers/</code>, <code>writers/</code>, and <code>utils/</code> (logging, audit, schema validation).</li>
+        <li><strong>Base classes:</strong> Abstract base class for Reader, Transformer, Writer with standard <code>read()</code>, <code>transform(df)</code>, <code>write(df)</code> interfaces.</li>
+        <li><strong>Audit logging:</strong> Every pipeline run writes to an audit table — pipeline name, run ID, start/end time, rows read/written, status, error message.</li>
+        <li><strong>Package as a wheel:</strong> Build as a Python package, publish to Databricks repos, install on clusters with <code>%pip install</code>.</li>
+        <li><strong>Unit tests:</strong> Use <code>pytest</code> + <code>chispa</code> (PySpark DataFrame equality testing). Run in CI/CD pipeline (GitHub Actions / Azure DevOps).</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">5</div><div class="q-title-wrap"><div class="q-title">How do you handle Schema Drift using ADF and Databricks?</div><div class="q-tags"><span class="q-tag tag-debug">Schema Management</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-body">
+      <p>Schema drift = source adds/removes/renames columns unexpectedly, breaking your pipeline.</p>
+      <p><strong>In ADF Data Flow:</strong> Enable "Allow schema drift" on the source transformation. ADF will pass through unknown columns. Use "Auto mapping" in the sink.</p>
+      <p><strong>In Databricks:</strong></p>
+      <ul>
+        <li>Read with <code>mergeSchema = True</code> for Parquet — Spark merges schemas across files with different columns.</li>
+        <li>For Delta: use <code>mergeSchema = true</code> on write. Delta handles additive changes automatically; destructive changes (column removal) need explicit <code>ALTER TABLE DROP COLUMN</code>.</li>
+        <li>Add a validation step that compares the incoming schema to the expected schema and sends an alert before writing rather than silently dropping new columns.</li>
+      </ul>
+      <div class="callout tip"><span class="callout-icon">&#x1F4CB;</span><div>For Power BI downstream: use a <strong>view layer</strong> in Synapse or Databricks SQL that selects only the stable columns BI depends on — insulating reports from upstream schema changes.</div></div>
+    </div>
+  </div>
+</div><!-- /databricks -->
+
+<!-- ════════════════════════════════════════════════════════
+     PYSPARK
+═══════════════════════════════════════════════════════════ -->
+<div id="pyspark" class="section">
+  <div class="sec-header">
+    <div class="sec-icon" style="background:#E8F5E9">&#x26A1;</div>
+    <div><div class="sec-title">PySpark & Apache Spark</div><div class="sec-desc">Skew, UDFs, partitioning, memory, AQE, streaming, nested JSON</div></div>
+  </div>
+
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">1</div><div class="q-title-wrap"><div class="q-title">How do you handle Data Skewness in a PySpark cluster? Explain Salting.</div><div class="q-tags"><span class="q-tag tag-perf">Performance</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-body">
+      <p>Data skew occurs when data is not evenly distributed across partitions. One partition may have 10 million rows while others have 10,000 — that one task takes 100x longer and becomes the bottleneck of the entire stage.</p>
+      <ul>
+        <li><strong>Salting (manual):</strong> Append a random integer (0 to N-1) to the join key on the skewed side. Explode the small side N times with each salt value. Join on the salted composite key. Drop the salt column after joining. This distributes one hot key across N partitions.</li>
+        <li><strong>AQE:</strong> Enable <code>spark.sql.adaptive.enabled=true</code> and <code>spark.sql.adaptive.skewJoin.enabled=true</code>. Spark 3.x automatically detects and splits skewed partitions at runtime — no code changes needed.</li>
+        <li><strong>Broadcast join:</strong> If the smaller side is &lt;~200MB, broadcast it to eliminate the shuffle entirely.</li>
+        <li><strong>Repartition on a composite key</strong> that distributes more evenly before the join.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">2</div><div class="q-title-wrap"><div class="q-title">Explain the difference between Vectorized UDF (pandas_udf) and standard UDF. Which is more efficient?</div><div class="q-tags"><span class="q-tag tag-perf">Performance</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-body">
+      <p><strong>Standard UDF:</strong> A Python function registered to run row-by-row. Spark cannot optimize it — it's a black box. Each row is serialized from JVM → Python process → processed → serialized back. This overhead is enormous, and UDFs disable Catalyst optimizations like predicate pushdown.</p>
+      <p><strong>Vectorized UDF (pandas_udf):</strong> Data is batched into Pandas Series using Apache Arrow for zero-copy serialization. Much faster — typically 3-10x compared to row-at-a-time UDFs.</p>
+      <pre><code>from pyspark.sql.functions import pandas_udf
+import pandas as pd
+
+@pandas_udf("double")
+def multiply_by_two(s: pd.Series) -> pd.Series:
+    return s * 2
+
+df.withColumn("result", multiply_by_two(col("amount")))</code></pre>
+      <div class="callout info"><span class="callout-icon">&#x1F3C6;</span><div>Performance ranking: <strong>Native Spark functions</strong> > <strong>Vectorized pandas_udf</strong> > <strong>Row-at-a-time UDF</strong>. Always prefer native functions — they're fully optimized by the Catalyst engine.</div></div>
+    </div>
+  </div>
+
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">3</div><div class="q-title-wrap"><div class="q-title">Explain partitioning and bucketing in Apache Spark and when to use each.</div><div class="q-tags"><span class="q-tag tag-arch">Storage</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-body">
+      <p><strong>Partitioning</strong> splits data into directories based on column values — e.g., <code>partitionBy("year", "month")</code> creates <code>year=2024/month=01/</code> folders. Queries filtering on the partition column skip entire directories (partition pruning). Best for low-cardinality columns like date, region, or status. High-cardinality columns (user_id) → millions of tiny files (small files problem).</p>
+      <p><strong>Bucketing</strong> hashes data into a fixed number of files (buckets) based on a column. Files are in one directory; the structure is internal metadata. Key benefit: when two tables are bucketed on the same column with the same bucket count, Spark can join them without any shuffle.</p>
+      <pre><code>df.write.bucketBy(64, "customer_id").sortBy("customer_id")\
+    .saveAsTable("orders_bucketed")</code></pre>
+      <p>Partitioning is for <strong>read-time pruning</strong> (filter performance). Bucketing is for <strong>join performance</strong> (shuffle elimination). They can be combined.</p>
+    </div>
+  </div>
+
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">4</div><div class="q-title-wrap"><div class="q-title">What is the difference between cache() and persist()? When should you use DISK_ONLY?</div><div class="q-tags"><span class="q-tag tag-perf">Memory</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-body">
+      <p><code>cache()</code> is shorthand for <code>persist(StorageLevel.MEMORY_AND_DISK)</code>. It tries to store the DataFrame in memory and spills to disk if memory is insufficient.</p>
+      <p><code>persist()</code> is the full API — choose the storage level explicitly:</p>
+      <ul>
+        <li><strong>MEMORY_ONLY:</strong> Fastest. If it doesn't fit, partitions are dropped and recomputed on access — no disk fallback.</li>
+        <li><strong>MEMORY_AND_DISK:</strong> Default of <code>cache()</code>. Spills excess partitions to disk instead of recomputing. Safe for most use cases.</li>
+        <li><strong>DISK_ONLY:</strong> Never uses memory. Use when the DataFrame is too large to fit in memory AND you want to avoid OOM errors. Slower but prevents crashes for extremely large intermediate results.</li>
+        <li><strong>MEMORY_AND_DISK_SER:</strong> Serializes objects (smaller footprint) at cost of CPU for ser/deser.</li>
+      </ul>
+      <div class="callout warn"><span class="callout-icon">&#x26A0;&#xFE0F;</span><div>Always call <code>unpersist()</code> when done to free resources. Never cache a DataFrame used only once — it's pointless overhead.</div></div>
+    </div>
+  </div>
+
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">5</div><div class="q-title-wrap"><div class="q-title">Explain Broadcast Hash Joins. What is the default threshold size in Spark?</div><div class="q-tags"><span class="q-tag tag-perf">Optimization</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-body">
+      <p>In a regular join, Spark must shuffle both tables across the network so matching keys land on the same executor. In a <strong>Broadcast Hash Join</strong>, the smaller table is fully copied ("broadcast") to every executor — no shuffle needed.</p>
+      <p><strong>Default auto-broadcast threshold: 10MB</strong> (<code>spark.sql.autoBroadcastJoinThreshold = 10485760</code>). If the smaller table is under 10MB, Spark automatically broadcasts it.</p>
+      <pre><code>from pyspark.sql.functions import broadcast
+df_large.join(broadcast(df_small), "key")</code></pre>
+      <div class="callout warn"><span class="callout-icon">&#x26A0;&#xFE0F;</span><div>Broadcasting a 500MB table to 100 executors = 50GB total memory consumed. Increase the threshold carefully. Use the explicit <code>broadcast()</code> hint when Spark's size estimate is off.</div></div>
+    </div>
+  </div>
+
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">6</div><div class="q-title-wrap"><div class="q-title">What is Adaptive Query Execution (AQE)? How does it help at runtime?</div><div class="q-tags"><span class="q-tag tag-perf">Optimization</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-body">
+      <p>Traditional Spark optimization happens at query parse time based on statistics that may be stale or missing. AQE (Spark 3.0+) re-optimizes the query plan <strong>at runtime</strong> using actual shuffle statistics.</p>
+      <ul>
+        <li><strong>Dynamic coalescing of shuffle partitions:</strong> If data is small, AQE merges small partitions → fewer tasks, less overhead.</li>
+        <li><strong>Dynamic switch to broadcast join:</strong> If at runtime one side turns out small enough to broadcast, AQE switches from sort-merge to broadcast hash join mid-query.</li>
+        <li><strong>Dynamic skew join handling:</strong> AQE detects skewed partitions (5x larger than median) and splits them into parallel sub-tasks.</li>
+      </ul>
+      <p>Enable: <code>spark.conf.set("spark.sql.adaptive.enabled", "true")</code>. In Databricks, AQE is enabled by default from DBR 7.3+.</p>
+    </div>
+  </div>
+
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">7</div><div class="q-title-wrap"><div class="q-title">What is Spark Spill? How do you identify it in the Spark UI and resolve it?</div><div class="q-tags"><span class="q-tag tag-debug">Performance</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-body">
+      <p>Spill occurs when a Spark task's in-memory data exceeds available executor memory. Spark writes excess to disk and reads it back when needed — disk I/O is 100-1000x slower than RAM.</p>
+      <p><strong>Identify:</strong> Spark UI → Stages tab → look for non-zero <em>Shuffle Spill (Memory)</em> and <em>Shuffle Spill (Disk)</em> columns. Also check Stage detail → Task metrics for high "Disk bytes spilled".</p>
+      <ul>
+        <li>Increase executor memory or upgrade node type.</li>
+        <li>Increase <code>spark.sql.shuffle.partitions</code> so each partition is smaller.</li>
+        <li>Fix data skew with salting or AQE — skewed tasks spill because they receive disproportionate amounts of data.</li>
+        <li>Push filters earlier to reduce data volume before expensive shuffle operations.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">8</div><div class="q-title-wrap"><div class="q-title">How do you handle the Small File Problem in a Data Lake? Coalesce vs. repartition?</div><div class="q-tags"><span class="q-tag tag-perf">Performance</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-body">
+      <p>Thousands of tiny files require a metadata call per file and Spark creates one task per file — 10,000 files = 10,000 tasks = scheduler and storage service overwhelm.</p>
+      <ul>
+        <li><strong>coalesce(N):</strong> Reduces partition count without a full shuffle. Very efficient. Output may be slightly uneven. Use when reducing files before writing and balanced output is not critical.</li>
+        <li><strong>repartition(N):</strong> Full shuffle — redistributes data evenly across N partitions. More expensive but produces balanced, evenly-sized output files.</li>
+      </ul>
+      <pre><code>df.coalesce(10).write.parquet("output/")      # cheap, slightly uneven
+df.repartition(10).write.parquet("output/")   # expensive, perfectly even</code></pre>
+      <div class="callout tip"><span class="callout-icon">&#x1F4A1;</span><div>In Delta Lake: use the <code>OPTIMIZE</code> command which compacts small files into larger ones (default ~1GB) via bin-packing. Schedule nightly alongside <strong>Auto-Compaction</strong> for real-time mitigation.</div></div>
+    </div>
+  </div>
+
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">9</div><div class="q-title-wrap"><div class="q-title">When should Checkpointing be used in Spark? What happens if the checkpoint directory is deleted in Structured Streaming?</div><div class="q-tags"><span class="q-tag tag-pattern">Streaming</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-body">
+      <p><strong>Batch checkpointing:</strong> For very long lineage chains (&gt;~20 chained transformations), <code>rdd.checkpoint()</code> materializes the RDD to ADLS/HDFS, breaking the lineage so recomputations start from the checkpoint.</p>
+      <p><strong>Structured Streaming checkpointing:</strong> The checkpoint directory stores the streaming state — offset tracking (which Kafka messages have been processed), aggregation state (running totals, windowed counts), and query progress metadata. It is how exactly-once processing is guaranteed.</p>
+      <div class="callout warn"><span class="callout-icon">&#x1F6A8;</span><div><strong>If the checkpoint directory is deleted:</strong> The streaming query loses all state. On restart it begins fresh — it may re-read old data, aggregations reset to zero, and exactly-once guarantees are broken. For stateful aggregations this constitutes data loss. <strong>Never delete the checkpoint directory of a running or paused streaming query.</strong></div></div>
+      <pre><code>df.writeStream \
+  .format("delta") \
+  .option("checkpointLocation", "/mnt/checkpoints/mystream") \
+  .start("/mnt/delta/output")</code></pre>
+    </div>
+  </div>
+
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">10</div><div class="q-title-wrap"><div class="q-title">Write PySpark code to process and flatten nested JSON data.</div><div class="q-tags"><span class="q-tag tag-code">Code</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-body">
+      <p>Key functions: <code>explode()</code> for arrays (drops null rows), <code>explode_outer()</code> keeps null rows, <code>col("struct.field")</code> accesses nested struct fields.</p>
+      <pre><code>from pyspark.sql.functions import col, explode_outer
+
+# Read nested JSON
+df = spark.read.option("multiline", "true").json("path/to/nested.json")
+
+# Step 1: Explode the orders array (keep rows with null arrays)
+df_orders = df.select(
+    col("user_id"),
+    col("name"),
+    explode_outer(col("orders")).alias("order")
+)
+
+# Step 2: Access struct fields and explode nested items array
+df_items = df_orders.select(
+    col("user_id"),
+    col("name"),
+    col("order.order_id"),
+    explode_outer(col("order.items")).alias("item")
+)
+
+# Step 3: Flatten struct fields into top-level columns
+df_flat = df_items.select(
+    col("user_id"),
+    col("name"),
+    col("order_id"),
+    col("item.product"),
+    col("item.qty")
+)
+df_flat.show()</code></pre>
+    </div>
+  </div>
+</div><!-- /pyspark -->
+
+<!-- ════════════════════════════════════════════════════════
+     DELTA LAKE
+═══════════════════════════════════════════════════════════ -->
+<div id="delta" class="section">
+  <div class="sec-header">
+    <div class="sec-icon" style="background:#E3F2FD">&#x1F4C0;</div>
+    <div><div class="sec-title">Delta Lake</div><div class="sec-desc">Row-level deletes, compaction, data skipping, Z-ordering, skew joins</div></div>
+  </div>
+
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">1</div><div class="q-title-wrap"><div class="q-title">How do you implement Row-Level Deletions in Delta Lake without rewriting the entire partition?</div><div class="q-tags"><span class="q-tag tag-pattern">Delta Operations</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-body">
+      <p>Traditional Parquet is immutable — deleting a row requires rewriting the entire file. Delta Lake introduces row-level deletes via a two-step mechanism:</p>
+      <pre><code>from delta.tables import DeltaTable
+
+dt = DeltaTable.forPath(spark, "/mnt/delta/orders")
+dt.delete("order_id = 12345")
+
+# Or with SQL:
+spark.sql("DELETE FROM orders WHERE order_id = 12345")</code></pre>
+      <p><strong>How Delta handles it internally:</strong> Delta writes a new Parquet file with the non-deleted rows and marks the old file as deleted in the transaction log. The old file is logically gone but physically stays until <code>VACUUM</code> removes it after the retention period (default 7 days).</p>
+      <div class="callout tip"><span class="callout-icon">&#x1F512;</span><div>Critical for <strong>GDPR right-to-be-forgotten</strong>: delete a user's PII with DELETE, then after your retention window run VACUUM to physically remove the underlying file. Time travel to before the delete also becomes unavailable post-VACUUM.</div></div>
+    </div>
+  </div>
+
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">2</div><div class="q-title-wrap"><div class="q-title">Explain the Small File Problem and how Auto-Compaction in Databricks solves it.</div><div class="q-tags"><span class="q-tag tag-perf">Performance</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-body">
+      <p>Streaming jobs and frequent small batch writes create thousands of tiny Parquet files — each requiring a metadata call to open, with Spark creating one task per file causing extreme scheduler overhead.</p>
+      <p><strong>Auto-Compaction (Databricks only):</strong> After each write to a Delta table, Databricks checks if there are too many small files. If so, it automatically runs a compaction job in the background merging them into larger files (~128MB). This happens asynchronously without blocking your write.</p>
+      <pre><code>ALTER TABLE my_table SET TBLPROPERTIES (
+  'delta.autoOptimize.autoCompact' = 'true',
+  'delta.autoOptimize.optimizeWrite' = 'true'
+)</code></pre>
+      <p><strong>Optimized Write</strong> (companion feature): Instead of writing one file per partition per task, Databricks shuffles data before writing so each output file is ~128MB — reducing the file count from the write itself.</p>
+    </div>
+  </div>
+
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">3</div><div class="q-title-wrap"><div class="q-title">Explain the Data Skipping mechanism in Delta Lake. How does it differ from traditional SQL indexing?</div><div class="q-tags"><span class="q-tag tag-perf">Optimization</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-body">
+      <p>When you read from a Delta table with a filter (e.g., <code>WHERE event_date = '2024-01-15'</code>), Delta reads the transaction log's <strong>file-level statistics</strong> before scanning any data. For each Parquet file, the log stores: min value, max value, and null count per column.</p>
+      <p>If a file's <code>event_date</code> range is 2024-01-10 to 2024-01-12, Delta knows it cannot possibly contain 2024-01-15 and <strong>skips it entirely</strong> — no I/O, no task created.</p>
+      <p><strong>vs. traditional SQL index:</strong> A B-tree index points to exact row locations — ideal for OLTP single-row lookups. Delta's data skipping is coarser (file-level, not row-level) but is designed for analytical scans across billions of rows in object storage where random I/O is impractical.</p>
+      <div class="callout tip"><span class="callout-icon">&#x1F4A1;</span><div><strong>Z-Ordering</strong> colocates related data within files: <code>OPTIMIZE table ZORDER BY (customer_id, event_date)</code>. This makes min/max statistics tight and effective — maximizing data skipping hits on those columns.</div></div>
+    </div>
+  </div>
+
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">4</div><div class="q-title-wrap"><div class="q-title">How do you choose between Partitioning and Z-Ordering for a 10TB dataset?</div><div class="q-tags"><span class="q-tag tag-arch">Architecture Decision</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-body">
+      <p>These solve different problems and work best together:</p>
+      <p><strong>Partitioning</strong> creates physical directory splits. A query with <code>WHERE year=2024</code> reads only that folder — extremely effective for the partition column. Problem: high-cardinality columns (user_id with millions of values) → millions of tiny directories.</p>
+      <p><strong>Z-Ordering</strong> works within partitions. It reorders rows so rows sharing values in Z-ordered columns are stored together in the same files, making data skipping (min/max) effective for those columns.</p>
+      <ul>
+        <li>Pick 1-2 <strong>low-cardinality</strong> columns that appear in almost every query filter → <strong>Partition by these</strong> (e.g., date, region).</li>
+        <li>Pick 2-3 <strong>higher-cardinality</strong> columns that appear in many filters but aren't suitable for partitioning → <strong>Z-Order by these</strong> (e.g., customer_id, product_id).</li>
+        <li>Never partition by a high-cardinality column — this creates the severe small files problem.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">5</div><div class="q-title-wrap"><div class="q-title">Explain Skew Join optimization in Spark 3.x and how to handle it manually when AQE is disabled.</div><div class="q-tags"><span class="q-tag tag-perf">Advanced</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-body">
+      <p><strong>With AQE enabled:</strong> AQE monitors shuffle statistics mid-query. If a partition is more than 5x the median size (and larger than 256MB), AQE splits that partition into sub-partitions and processes them in parallel. Completely transparent — no code changes needed.</p>
+      <p><strong>Manually without AQE (Salting):</strong></p>
+      <pre><code>from pyspark.sql.functions import rand, lit, concat, col, explode, array
+
+N = 10  # salt factor
+# Skewed (large) side - append random salt
+big = big_df.withColumn("salt", (rand() * N).cast("int")) \
+            .withColumn("key_s", concat(col("key"), lit("_"), col("salt")))
+
+# Small side - replicate N times with each salt value
+small = small_df.withColumn("salt", explode(array([lit(i) for i in range(N)]))) \
+                .withColumn("key_s", concat(col("key"), lit("_"), col("salt")))
+
+# Join on salted key, then drop salt columns
+result = big.join(small, "key_s").drop("salt", "key_s")</code></pre>
+    </div>
+  </div>
+</div><!-- /delta -->
+
+<!-- ════════════════════════════════════════════════════════
+     SQL
+═══════════════════════════════════════════════════════════ -->
+<div id="sql" class="section">
+  <div class="sec-header">
+    <div class="sec-icon" style="background:#F3E5F5">&#x1F5C4;</div>
+    <div><div class="sec-title">SQL</div><div class="sec-desc">Query optimization, indexing, MERGE, duplicates, consecutive logins, masking</div></div>
+  </div>
+
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">1</div><div class="q-title-wrap"><div class="q-title">How would you optimize a slow SQL query? What steps and tools do you use?</div><div class="q-tags"><span class="q-tag tag-perf">Performance</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-body">
+      <ol>
+        <li><strong>Read the execution plan first:</strong> <code>EXPLAIN ANALYZE SELECT ...</code> — look for full table scans, sort operations, nested loops, and large gaps between estimated and actual row counts.</li>
+        <li><strong>Check indexes:</strong> Is there an index on the filter columns (WHERE, JOIN ON)? Are existing indexes being used or bypassed by the optimizer?</li>
+        <li><strong>Reduce the dataset early:</strong> Push WHERE filters as early as possible. Avoid <code>SELECT *</code> — select only the columns needed.</li>
+        <li><strong>Avoid functions on indexed columns:</strong> <code>WHERE YEAR(created_at) = 2024</code> prevents index use. Rewrite as: <code>WHERE created_at >= '2024-01-01' AND created_at &lt; '2025-01-01'</code></li>
+        <li><strong>Check join order and type:</strong> Join smaller tables first. Ensure join columns are indexed on both sides.</li>
+        <li><strong>Update statistics:</strong> <code>UPDATE STATISTICS</code> (SQL Server) or <code>ANALYZE</code> (PostgreSQL). Stale stats produce suboptimal execution plans.</li>
+        <li><strong>Avoid correlated subqueries:</strong> Replace them with JOINs or CTEs — correlated subqueries execute once per row in the outer query.</li>
+        <li><strong>In Synapse:</strong> Check distribution skew with <code>DBCC PDW_SHOWSPACEUSED</code>, update statistics, consider BROADCAST hints on small dimension tables.</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">2</div><div class="q-title-wrap"><div class="q-title">Explain database indexing and its impact on performance.</div><div class="q-tags"><span class="q-tag tag-fund">Fundamentals</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-body">
+      <p>An index is a separate data structure (usually a B-tree) that stores a sorted copy of one or more columns along with pointers to the original rows. Instead of scanning every row, the database finds matching rows in O(log n) time.</p>
+      <ul>
+        <li><strong>Clustered index:</strong> The table's physical row order matches the index. One per table. Best for range queries on the clustered key.</li>
+        <li><strong>Non-clustered index:</strong> A separate structure pointing into the table. Multiple allowed. Best for frequently-filtered non-PK columns.</li>
+        <li><strong>Covering index:</strong> Includes all columns needed by a query (using INCLUDE). The query is satisfied from the index alone — no table lookup required.</li>
+        <li><strong>Columnstore index:</strong> Stores data column by column, highly compressed. Ideal for analytical aggregations over millions of rows.</li>
+      </ul>
+      <div class="callout warn"><span class="callout-icon">&#x2696;&#xFE0F;</span><div>Indexes speed up reads but slow down writes — the index must be maintained on every INSERT, UPDATE, and DELETE. Index only columns that appear in WHERE, JOIN ON, and ORDER BY clauses of slow queries.</div></div>
+    </div>
+  </div>
+
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">3</div><div class="q-title-wrap"><div class="q-title">Explain the MERGE statement. How is it different from UPSERT?</div><div class="q-tags"><span class="q-tag tag-code">Code</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-body">
+      <p>UPSERT is a concept: insert if a record doesn't exist, update if it does. MERGE is the SQL statement that implements this — and more. MERGE is a superset of UPSERT — it can handle UPDATE, INSERT, and DELETE in one atomic statement.</p>
+      <pre><code>MERGE INTO target_table AS t
+USING source_table AS s
+ON t.order_id = s.order_id
+WHEN MATCHED AND s.amount != t.amount THEN
+    UPDATE SET t.amount = s.amount, t.updated_at = GETDATE()
+WHEN NOT MATCHED BY TARGET THEN
+    INSERT (order_id, amount, created_at)
+    VALUES (s.order_id, s.amount, GETDATE())
+WHEN NOT MATCHED BY SOURCE THEN
+    DELETE;  -- rows in target not in source → delete</code></pre>
+      <p>The <code>WHEN NOT MATCHED BY SOURCE THEN DELETE</code> clause goes beyond UPSERT — it's a full sync that removes rows from target that no longer exist in source. MERGE is atomic — either all three operations succeed or none do.</p>
+    </div>
+  </div>
+
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">4</div><div class="q-title-wrap"><div class="q-title">Write a SQL approach to identify duplicate records using multiple columns.</div><div class="q-tags"><span class="q-tag tag-code">Code</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-body">
+      <pre><code>-- Method 1: Find groups with duplicates
+SELECT order_id, customer_id, product_id, COUNT(*) AS duplicate_count
+FROM orders
+GROUP BY order_id, customer_id, product_id
+HAVING COUNT(*) > 1;
+
+-- Method 2: ROW_NUMBER to tag and inspect duplicates
+WITH ranked AS (
+    SELECT *,
+        ROW_NUMBER() OVER (
+            PARTITION BY order_id, customer_id, product_id
+            ORDER BY created_at DESC  -- keep the latest
+        ) AS rn
+    FROM orders
+)
+SELECT * FROM ranked WHERE rn > 1;  -- these are the duplicates
+
+-- Method 3: Delete duplicates, keep the latest
+WITH ranked AS (
+    SELECT id,
+        ROW_NUMBER() OVER (
+            PARTITION BY order_id, customer_id, product_id
+            ORDER BY created_at DESC
+        ) AS rn
+    FROM orders
+)
+DELETE FROM orders WHERE id IN (SELECT id FROM ranked WHERE rn > 1);</code></pre>
+    </div>
+  </div>
+
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">5</div><div class="q-title-wrap"><div class="q-title">Write a SQL query to find consecutive login days for users.</div><div class="q-tags"><span class="q-tag tag-code">Code</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-body">
+      <div class="callout info"><span class="callout-icon">&#x1F4A1;</span><div>Key insight: if logins are consecutive, <code>date - ROW_NUMBER()</code> produces the same constant value for all days in a streak. That constant becomes the group key.</div></div>
+      <pre><code>WITH deduped AS (
+    -- Remove duplicate logins on the same day
+    SELECT DISTINCT user_id, CAST(login_time AS DATE) AS login_date
+    FROM user_logins
+),
+numbered AS (
+    SELECT user_id, login_date,
+        ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY login_date) AS rn
+    FROM deduped
+),
+grouped AS (
+    SELECT user_id, login_date,
+        DATEADD(DAY, -rn, login_date) AS streak_group  -- constant within a streak
+    FROM numbered
+)
+SELECT
+    user_id,
+    MIN(login_date) AS streak_start,
+    MAX(login_date) AS streak_end,
+    COUNT(*) AS consecutive_days
+FROM grouped
+GROUP BY user_id, streak_group
+HAVING COUNT(*) > 1  -- only streaks of 2+ days
+ORDER BY consecutive_days DESC;</code></pre>
+    </div>
+  </div>
+
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">6</div><div class="q-title-wrap"><div class="q-title">How would you implement data masking in Azure SQL for sensitive columns?</div><div class="q-tags"><span class="q-tag tag-sec">Security</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-body">
+      <p><strong>Dynamic Data Masking (DDM)</strong> is applied at the column definition level. Users without the UNMASK permission see masked values. Data is not changed on disk — masking is applied at query time.</p>
+      <pre><code>-- Add masking to existing columns
+ALTER TABLE customers ALTER COLUMN email
+    ADD MASKED WITH (FUNCTION = 'email()');            -- aXXX@XXXX.com
+
+ALTER TABLE customers ALTER COLUMN phone
+    ADD MASKED WITH (FUNCTION = 'partial(0,"XXX-XXX-",4)'); -- XXX-XXX-1234
+
+ALTER TABLE customers ALTER COLUMN salary
+    ADD MASKED WITH (FUNCTION = 'default()');          -- 0 for numbers
+
+-- Grant unmask to privileged role
+GRANT UNMASK ON customers TO data_engineer_role;</code></pre>
+      <div class="callout warn"><span class="callout-icon">&#x26A0;&#xFE0F;</span><div>DDM does not protect against WHERE clause inference attacks (<code>WHERE salary = 75000</code> still works). Combine with Column-Level Security (DENY SELECT on specific columns) for complete protection.</div></div>
+    </div>
+  </div>
+</div><!-- /sql -->
+
+<!-- ════════════════════════════════════════════════════════
+     SECURITY
+═══════════════════════════════════════════════════════════ -->
+<div id="security" class="section">
+  <div class="sec-header">
+    <div class="sec-icon" style="background:#FCE4EC">&#x1F512;</div>
+    <div><div class="sec-title">Security & Secrets Management</div><div class="sec-desc">Key Vault, Managed Identity, Column/Row-Level Security, schema evolution</div></div>
+  </div>
+
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">1</div><div class="q-title-wrap"><div class="q-title">How do you use Azure Key Vault and Managed Identities to eliminate hardcoded credentials?</div><div class="q-tags"><span class="q-tag tag-sec">Security</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-body">
+      <p><strong>Azure Key Vault</strong> stores all secrets (passwords, connection strings, API keys) securely. Access is controlled via RBAC.</p>
+      <p><strong>Managed Identity (MI)</strong> is an Azure AD identity automatically assigned to an Azure resource (ADF, Databricks, App Service). The identity has no password — Azure manages the credentials internally. You grant this identity access to Key Vault, and the resource authenticates using its MI, fetches the secret, and uses it — all without any hardcoded credentials.</p>
+      <ul>
+        <li><strong>In ADF:</strong> ADF has a System-Assigned MI automatically. Grant it the "Key Vault Secrets User" role. In Linked Service, reference: <code>@Microsoft.KeyVault(VaultName=myVault;SecretName=sqlPassword)</code>. ADF fetches the secret at runtime — no password in ADF config.</li>
+        <li><strong>In Databricks:</strong> Create a Databricks Secret Scope backed by Azure Key Vault. In notebooks: <code>dbutils.secrets.get(scope="kv-scope", key="storage-key")</code>. The secret is never printed in logs or visible in notebook output.</li>
+        <li><strong>For ADLS access:</strong> Configure Spark session to use OAuth with <code>MsiTokenProvider</code>. Grant the Databricks cluster's MI the "Storage Blob Data Contributor" role on ADLS. No storage keys needed anywhere.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">2</div><div class="q-title-wrap"><div class="q-title">How do you manage secrets securely in a production pipeline?</div><div class="q-tags"><span class="q-tag tag-sec">Best Practice</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-body">
+      <ul>
+        <li><strong>Never hardcode secrets</strong> in notebooks, config files, or pipeline definitions — even temporarily. They end up in version control and are extremely difficult to fully remove from git history.</li>
+        <li><strong>Key Vault for all secrets.</strong> Rotate secrets in Key Vault without touching your code — services fetch the latest value on the next run automatically.</li>
+        <li><strong>Prefer Managed Identity</strong> over Service Principals over passwords. MIs have no credentials to leak. SPs have client secrets that expire and must be rotated. SQL passwords are the least secure option.</li>
+        <li><strong>Databricks secret scopes:</strong> <code>dbutils.secrets.get()</code> — Databricks automatically redacts these values from notebook output and cluster logs.</li>
+        <li><strong>Environment-specific secrets:</strong> Separate Key Vaults (or secret versions) per environment — dev, staging, prod. Pipelines reference the environment-appropriate vault via a parameter.</li>
+        <li><strong>Audit Key Vault access:</strong> Enable diagnostic logs → Log Analytics. Alert on unexpected access patterns or access from unexpected principals.</li>
+        <li><strong>Least privilege:</strong> Grant each service identity only the specific secrets it needs — not blanket "Get All Secrets" on the entire vault.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">3</div><div class="q-title-wrap"><div class="q-title">How do you implement Column-Level Security and Row-Level Security in a Lakehouse?</div><div class="q-tags"><span class="q-tag tag-sec">Security</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-body">
+      <p><strong>Column-Level Security (CLS):</strong> Prevent specific users or roles from reading specific columns entirely.</p>
+      <pre><code>-- Synapse Dedicated Pool
+DENY SELECT ON dbo.customers(ssn, credit_card) TO analyst_role;
+GRANT SELECT ON dbo.customers(customer_id, name, email) TO analyst_role;
+
+-- Databricks Unity Catalog
+GRANT SELECT ON TABLE customers TO analyst_role;
+REVOKE SELECT (ssn, credit_card) ON TABLE customers FROM analyst_role;</code></pre>
+      <p><strong>Row-Level Security (RLS):</strong> Restrict which rows a user can see based on their identity. In Synapse, create a security predicate function that evaluates the current user's access context, then bind it to the table as a SECURITY POLICY with FILTER PREDICATE — every query on the table automatically runs through the predicate.</p>
+      <p>In <strong>Databricks Unity Catalog</strong>: Define a column masking function and attach it to a column. Any query on that column runs through the masking function based on the caller's group membership — fine-grained, centrally managed access control across all tools querying through Unity Catalog.</p>
+    </div>
+  </div>
+
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">4</div><div class="q-title-wrap"><div class="q-title">Your pipeline is stuck in a Queued state. What are the top 3 things you would check?</div><div class="q-tags"><span class="q-tag tag-debug">Troubleshooting</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-body">
+      <ol>
+        <li><strong>Cluster availability / resource contention:</strong> In Databricks, a queued job often means the cluster is starting up, all available spot instances are taken, or the cluster pool is exhausted. Check the cluster Events tab for startup errors or spot eviction notices. In ADF, check if the Integration Runtime is online — if SHIR is offline, activities queue indefinitely.</li>
+        <li><strong>Concurrency limits:</strong> In ADF, check if the pipeline concurrency setting is 1 and another instance is already running. In Synapse, check workload management — if all concurrency slots are consumed, new queries queue. Check <code>sys.dm_pdw_waits</code> and <code>sys.dm_pdw_exec_requests</code> for queued requests and what resources they are waiting for.</li>
+        <li><strong>Trigger or dependency issue:</strong> Is the pipeline waiting for a predecessor to complete? In ADF, check pipeline dependencies. Is a tumbling window trigger still processing historical windows one at a time? In Databricks, check if the job is waiting on a preceding task in a multi-task job that has not yet completed.</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">5</div><div class="q-title-wrap"><div class="q-title">How do you handle Schema Evolution without breaking downstream Power BI reports?</div><div class="q-tags"><span class="q-tag tag-arch">Architecture</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-body">
+      <p>Core principle: <strong>insulate consumers from upstream schema changes using a stable interface layer.</strong></p>
+      <ul>
+        <li><strong>Views as a contract layer:</strong> Power BI connects to a view (Synapse serverless view or Databricks SQL view), not directly to the Delta table. When upstream schema changes, update the view to maintain the same output columns — Power BI sees no change.</li>
+        <li><strong>Semantic model isolation:</strong> In Power BI, use a semantic model (dataset) as the interface. Reports connect to the model, not the underlying source directly. Update the model's queries when schema changes, without touching any reports.</li>
+        <li><strong>Additive changes are safe:</strong> Adding new columns to a Delta table doesn't break existing queries. Treat column removal or renaming as breaking changes requiring a deprecation period.</li>
+        <li><strong>Column aliasing:</strong> If a source column is renamed, add an alias in the view to maintain backward compatibility during the transition period.</li>
+        <li><strong>Schema change alerts:</strong> Add a validation step in your pipeline that compares the incoming schema to the expected schema and sends an alert before writing — giving you time to update the interface layer before new schema lands in production.</li>
+      </ul>
+    </div>
+  </div>
+</div><!-- /security -->
+
+<!-- ════════════════════════════════════════════════════════
+     CODING — SQL & PYSPARK
+═══════════════════════════════════════════════════════════ -->
+<div id="coding" class="section">
+  <div class="sec-header">
+    <div class="sec-icon" style="background:#F3E5F5">&#x1F4BB;</div>
+    <div>
+      <div class="sec-title">Coding — SQL & PySpark</div>
+      <div class="sec-desc">Real interview problems grouped by concept. Each problem shows SQL + PySpark solution side-by-side.</div>
+    </div>
+  </div>
+
+  <!-- ══ CONCEPT SET 1: DUPLICATES ══════════════════════════════ -->
+  <div class="concept-group">
+    <div class="concept-label"><span>&#x1F9F9; Set 1 — Duplicate Detection & Removal</span></div>
+
+    <div class="q-card">
+      <div class="q-header" onclick="toggle(this)">
+        <div class="q-num">1</div>
+        <div class="q-title-wrap">
+          <div class="q-title">Find duplicate records and remove them efficiently — keep the latest by timestamp</div>
+          <div class="q-tags"><span class="q-tag tag-code">Dedup</span><span class="q-tag tag-pattern">Window Function</span></div>
+        </div>
+        <div class="q-chevron">▼</div>
+      </div>
+      <div class="q-body">
+        <div class="schema-box">
+          <strong>Table:</strong> <code>customers</code> — columns: <code>customer_id</code>, <code>name</code>, <code>email</code>, <code>updated_at</code> (TIMESTAMP)
+        </div>
+        <p>Strategy: Use <code>ROW_NUMBER()</code> partitioned by the natural key, ordered by timestamp DESC. Row 1 = latest. Delete all rows where rn &gt; 1.</p>
+        <div class="split-grid">
+          <div class="split-pane sql-pane-card">
+            <div class="split-pane-header">&#x1F5C4; SQL</div>
+            <pre><code class="language-sql"><!-- Step 1: Identify duplicates -->
+WITH ranked AS (
+  SELECT *,
+    ROW_NUMBER() OVER (PARTITION BY customer_id ORDER BY updated_at DESC) AS rn
+  FROM customers
+)
+-- Step 2: View duplicates
+SELECT * FROM ranked WHERE rn > 1;
+
+-- Step 3: Delete duplicates (keep latest)
+DELETE FROM customers
+WHERE id NOT IN (
+  SELECT MIN(id)   -- keep one record per group
+  FROM (
+    SELECT id,
+      ROW_NUMBER() OVER (PARTITION BY customer_id ORDER BY updated_at DESC) AS rn
+    FROM customers
+  ) t
+  WHERE rn = 1
+);
+
+-- Alternative (faster on large tables):
+WITH ranked AS (
+  SELECT id,
+    ROW_NUMBER() OVER (PARTITION BY customer_id ORDER BY updated_at DESC) AS rn
+  FROM customers
+)
+DELETE FROM customers
+WHERE id IN (SELECT id FROM ranked WHERE rn > 1);</code></pre>
+          </div>
+          <div class="split-pane py-pane-card">
+            <div class="split-pane-header">&#x1F40D; PySpark</div>
+            <pre><code class="language-python">from pyspark.sql import SparkSession
+from pyspark.sql.functions import col, row_number
+from pyspark.sql.window import Window
+
+spark = SparkSession.builder.getOrCreate()
+
+df = spark.read.parquet("/mnt/data/customers")
+
+# Define window: partition by business key, latest first
+window = Window.partitionBy("customer_id").orderBy(col("updated_at").desc())
+
+# Assign row numbers
+ranked = df.withColumn("rn", row_number().over(window))
+
+# Keep only the latest record per customer_id
+deduped = ranked.filter(col("rn") == 1).drop("rn")
+
+# Write back
+deduped.write.mode("overwrite").format("delta") \.save("/mnt/delta/customers_clean")
+
+# Verify
+print(f"Before: {df.count()}, After: {deduped.count()}")
+</code></pre>
+          </div>
+        </div>
+        <div class="callout tip"><span class="callout-icon">&#x1F4A1;</span><div>In Delta Lake, use <code>MERGE INTO</code> with a unique key instead of delete + reinsert — it's atomic and handles concurrent writes safely. Always check counts before and after dedup.</div></div>
+      </div>
+    </div>
+
+    <div class="q-card">
+      <div class="q-header" onclick="toggle(this)">
+        <div class="q-num">2</div>
+        <div class="q-title-wrap">
+          <div class="q-title">Detect duplicate records based on multiple columns (e.g., name + email + phone)</div>
+          <div class="q-tags"><span class="q-tag tag-code">Dedup</span><span class="q-tag tag-pattern">Multi-column</span></div>
+        </div>
+        <div class="q-chevron">▼</div>
+      </div>
+      <div class="q-body">
+        <div class="schema-box">
+          <strong>Table:</strong> <code>records</code> — columns: <code>id</code>, <code>first_name</code>, <code>last_name</code>, <code>email</code>, <code>phone</code>, <code>created_at</code>
+        </div>
+        <div class="split-grid">
+          <div class="split-pane sql-pane-card">
+            <div class="split-pane-header">&#x1F5C4; SQL</div>
+            <pre><code class="language-sql"><!-- Find groups with duplicates -->
+SELECT first_name, last_name, email,
+       COUNT(*) AS cnt
+FROM records
+GROUP BY first_name, last_name, email
+HAVING COUNT(*) > 1;
+
+-- Tag each duplicate with a row number
+WITH ranked AS (
+  SELECT *,
+    ROW_NUMBER() OVER (PARTITION BY first_name, last_name, email ORDER BY created_at DESC) AS rn
+  FROM records
+)
+-- See all duplicates
+SELECT * FROM ranked WHERE rn > 1;
+
+-- Remove duplicates (keep latest per group)
+WITH ranked AS (
+  SELECT id,
+    ROW_NUMBER() OVER (PARTITION BY first_name, last_name, email ORDER BY created_at DESC) AS rn
+  FROM records
+)
+DELETE FROM records
+WHERE id IN (SELECT id FROM ranked WHERE rn > 1);</code></pre>
+          </div>
+          <div class="split-pane py-pane-card">
+            <div class="split-pane-header">&#x1F40D; PySpark</div>
+            <pre><code class="language-python">from pyspark.sql.functions import col, row_number, count
+from pyspark.sql.window import Window
+
+df = spark.read.parquet("/mnt/data/records")
+
+# --- Approach 1: dropDuplicates (simple, no tie-breaking) ---
+df_simple = df.dropDuplicates(["first_name", "last_name", "email"])
+
+# --- Approach 2: Window with tie-breaking (recommended) ---
+key_cols = ["first_name", "last_name", "email"]
+win = Window.partitionBy(*key_cols).orderBy(col("created_at").desc())
+
+deduped = (df.withColumn("rn", row_number().over(win))
+             .filter(col("rn") == 1).drop("rn"))
+
+# --- Approach 3: Show duplicate groups ---
+dups = (df.groupBy(*key_cols).agg(count("*").alias("cnt"))
+          .filter(col("cnt") > 1))
+dups.show()
+</code></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="q-card">
+      <div class="q-header" onclick="toggle(this)">
+        <div class="q-num">3</div>
+        <div class="q-title-wrap">
+          <div class="q-title">Remove duplicates from a table without using DISTINCT</div>
+          <div class="q-tags"><span class="q-tag tag-code">SQL</span><span class="q-tag tag-pattern">Dedup</span></div>
+        </div>
+        <div class="q-chevron">▼</div>
+      </div>
+      <div class="q-body">
+        <p>DISTINCT works but forces a full sort. For large tables, ROW_NUMBER() with a CTE is more efficient and gives you control over which duplicate to keep.</p>
+        <div class="split-grid">
+          <div class="split-pane sql-pane-card">
+            <div class="split-pane-header">&#x1F5C4; SQL — 3 approaches</div>
+            <pre><code class="language-sql">-- Method 1: ROW_NUMBER (preferred — keeps latest)
+WITH cte AS (
+  SELECT *,
+    ROW_NUMBER() OVER (PARTITION BY employee_id ORDER BY updated_at DESC) AS rn
+  FROM employees
+)
+DELETE FROM employees
+WHERE id IN (SELECT id FROM cte WHERE rn > 1);
+
+-- Method 2: Self-join (keep min rowid)
+DELETE e1 FROM employees e1
+INNER JOIN employees e2
+  ON e1.employee_id = e2.employee_id
+  AND e1.id > e2.id;  -- keep the lower id
+
+-- Method 3: INSERT INTO new table + rename
+SELECT DISTINCT * INTO employees_clean
+FROM employees;
+
+DROP TABLE employees;
+EXEC sp_rename 'employees_clean', 'employees';</code></pre>
+          </div>
+          <div class="split-pane py-pane-card">
+            <div class="split-pane-header">&#x1F40D; PySpark</div>
+            <pre><code class="language-python">from pyspark.sql.functions import col, row_number
+from pyspark.sql.window import Window
+
+df = spark.read.format("delta").load("/mnt/delta/employees")
+
+# ROW_NUMBER approach — equivalent to SQL Method 1
+win = Window.partitionBy("employee_id").orderBy(col("updated_at").desc())
+
+clean = (df.withColumn("rn", row_number().over(win)).filter("rn = 1").drop("rn"))
+
+# Overwrite the Delta table
+clean.write.format("delta") \
+    .mode("overwrite") \
+    .option("overwriteSchema", "false") \
+    .save("/mnt/delta/employees")
+</code></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div><!-- /concept set 1 -->
+
+
+  <!-- ══ CONCEPT SET 2: WINDOW FUNCTIONS ═══════════════════════ -->
+  <div class="concept-group">
+    <div class="concept-label"><span>&#x1F4CA; Set 2 — Window Functions</span></div>
+
+    <div class="q-card">
+      <div class="q-header" onclick="toggle(this)">
+        <div class="q-num">4</div>
+        <div class="q-title-wrap">
+          <div class="q-title">What are window functions in SQL and when would you use them?</div>
+          <div class="q-tags"><span class="q-tag tag-fund">Concept</span><span class="q-tag tag-pattern">Window Functions</span></div>
+        </div>
+        <div class="q-chevron">▼</div>
+      </div>
+      <div class="q-body">
+        <p>A window function performs a calculation across a set of rows <strong>related to the current row</strong> — without collapsing them into a single output row like GROUP BY does. The "window" is defined by <code>OVER (PARTITION BY ... ORDER BY ...)</code>.</p>
+        <p>Use window functions when you need both the individual row AND an aggregation — e.g., "show each employee's salary alongside their department average."</p>
+        <ul>
+          <li><strong>Ranking:</strong> <code>ROW_NUMBER()</code>, <code>RANK()</code>, <code>DENSE_RANK()</code> — rank rows within a group.</li>
+          <li><strong>Running totals / moving averages:</strong> <code>SUM() OVER</code>, <code>AVG() OVER</code> with ORDER BY.</li>
+          <li><strong>Lead/Lag:</strong> <code>LAG(col, 1)</code> — previous row's value; <code>LEAD(col, 1)</code> — next row's value. Great for month-over-month comparisons.</li>
+          <li><strong>NTILE(n):</strong> Divide rows into n equal buckets (e.g., quartiles, deciles).</li>
+          <li><strong>FIRST_VALUE / LAST_VALUE:</strong> First or last value in the window frame.</li>
+        </ul>
+        <div class="split-grid">
+          <div class="split-pane sql-pane-card">
+            <div class="split-pane-header">&#x1F5C4; SQL — Window Function Examples</div>
+            <pre><code class="language-sql">SELECT
+  employee_id,
+  department,
+  salary,
+  -- Rank within department
+  RANK() OVER (PARTITION BY department ORDER BY salary DESC) AS dept_rank,
+  -- Running total per department
+  SUM(salary) OVER (PARTITION BY department ORDER BY employee_id
+                  ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS running_total,
+  -- Department average (no GROUP BY needed)
+  AVG(salary) OVER (PARTITION BY department) AS dept_avg,
+  -- Previous employee's salary
+  LAG(salary, 1) OVER (PARTITION BY department ORDER BY salary DESC) AS prev_salary
+FROM employees;</code></pre>
+          </div>
+          <div class="split-pane py-pane-card">
+            <div class="split-pane-header">&#x1F40D; PySpark</div>
+            <pre><code class="language-python">from pyspark.sql.functions import (
+  rank, avg, sum as _sum, lag, col
+)
+from pyspark.sql.window import Window
+
+dept_win  = Window.partitionBy("department")
+order_win = Window.partitionBy("department").orderBy(col("salary").desc())
+running   = Window.partitionBy("department").orderBy("employee_id") \
+                  .rowsBetween(Window.unboundedPreceding, Window.currentRow)
+
+df.select(
+  "employee_id", "department", "salary",
+  rank().over(order_win).alias("dept_rank"),
+  _sum("salary").over(running).alias("running_total"),
+  avg("salary").over(dept_win).alias("dept_avg"),
+  lag("salary", 1).over(order_win).alias("prev_salary")
+).show()
+</code></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="q-card">
+      <div class="q-header" onclick="toggle(this)">
+        <div class="q-num">5</div>
+        <div class="q-title-wrap">
+          <div class="q-title">Top 3 highest-paid employees in each department</div>
+          <div class="q-tags"><span class="q-tag tag-code">Ranking</span><span class="q-tag tag-pattern">Window Function</span></div>
+        </div>
+        <div class="q-chevron">▼</div>
+      </div>
+      <div class="q-body">
+        <div class="schema-box">
+          <strong>Table:</strong> <code>employees</code> — <code>employee_id</code>, <code>name</code>, <code>department</code>, <code>salary</code>
+        </div>
+        <div class="split-grid">
+          <div class="split-pane sql-pane-card">
+            <div class="split-pane-header">&#x1F5C4; SQL</div>
+            <pre><code class="language-sql">WITH ranked AS (
+  SELECT
+    employee_id, name, department, salary,
+    DENSE_RANK() OVER (PARTITION BY department ORDER BY salary DESC) AS rnk
+  FROM employees
+)
+SELECT employee_id, name, department, salary, rnk
+FROM ranked
+WHERE rnk <= 3
+ORDER BY department, rnk;
+
+-- Note: Use DENSE_RANK (not RANK) so ties don't
+-- skip positions. If two people share rank 2,
+-- RANK gives 2,2,4 — DENSE_RANK gives 2,2,3.</code></pre>
+          </div>
+          <div class="split-pane py-pane-card">
+            <div class="split-pane-header">&#x1F40D; PySpark</div>
+            <pre><code class="language-python">from pyspark.sql.functions import dense_rank, col
+from pyspark.sql.window import Window
+
+win = Window.partitionBy("department").orderBy(col("salary").desc())
+
+result = (df.withColumn("rnk", dense_rank().over(win))
+            .filter(col("rnk") <= 3)
+            .select("employee_id","name","department","salary","rnk")
+            .orderBy("department", "rnk"))
+result.show()
+</code></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="q-card">
+      <div class="q-header" onclick="toggle(this)">
+        <div class="q-num">6</div>
+        <div class="q-title-wrap">
+          <div class="q-title">Second highest salary in each department</div>
+          <div class="q-tags"><span class="q-tag tag-code">Ranking</span><span class="q-tag tag-pattern">Window Function</span></div>
+        </div>
+        <div class="q-chevron">▼</div>
+      </div>
+      <div class="q-body">
+        <div class="schema-box">
+          <strong>Table:</strong> <code>employees</code> — <code>employee_id</code>, <code>name</code>, <code>department</code>, <code>salary</code>
+        </div>
+        <div class="split-grid">
+          <div class="split-pane sql-pane-card">
+            <div class="split-pane-header">&#x1F5C4; SQL</div>
+            <pre><code class="language-sql">-- Method 1: DENSE_RANK (handles ties correctly)
+WITH ranked AS (
+  SELECT
+    employee_id, name, department, salary,
+    DENSE_RANK() OVER (PARTITION BY department ORDER BY salary DESC) AS rnk
+  FROM employees
+)
+SELECT * FROM ranked WHERE rnk = 2;
+
+-- Method 2: Subquery (no window function)
+SELECT department,
+  MAX(salary) AS second_highest
+FROM employees
+WHERE salary < (
+  SELECT MAX(salary) FROM employees e2
+  WHERE e2.department = employees.department
+)
+GROUP BY department;
+
+-- Method 3: LEAD (peek at next row's salary)
+WITH ordered AS (
+  SELECT DISTINCT department, salary,
+    LEAD(salary) OVER (PARTITION BY department ORDER BY salary DESC) AS next_salary
+  FROM employees
+)
+SELECT department, next_salary AS second_highest
+FROM ordered
+WHERE next_salary IS NOT NULL
+  AND salary = (SELECT MAX(salary)
+                FROM employees e
+                WHERE e.department = ordered.department);</code></pre>
+          </div>
+          <div class="split-pane py-pane-card">
+            <div class="split-pane-header">&#x1F40D; PySpark</div>
+            <pre><code class="language-python">from pyspark.sql.functions import dense_rank, col
+from pyspark.sql.window import Window
+
+win = Window.partitionBy("department").orderBy(col("salary").desc())
+
+result = (df.withColumn("rnk", dense_rank().over(win))
+            .filter(col("rnk") == 2)
+            .select("employee_id","name","department","salary"))
+result.show()
+
+# Alternative: filter salary < max, then take max
+from pyspark.sql.functions import max as _max
+
+dept_max = df.groupBy("department").agg(_max("salary").alias("max_sal"))
+
+second = (df.join(dept_max, "department")
+            .filter(col("salary") < col("max_sal"))
+            .groupBy("department")
+            .agg(_max("salary").alias("second_highest")))
+second.show()
+</code></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="q-card">
+      <div class="q-header" onclick="toggle(this)">
+        <div class="q-num">7</div>
+        <div class="q-title-wrap">
+          <div class="q-title">Find employees whose salary is higher than the average salary of their department</div>
+          <div class="q-tags"><span class="q-tag tag-code">Window Function</span><span class="q-tag tag-pattern">Aggregation</span></div>
+        </div>
+        <div class="q-chevron">▼</div>
+      </div>
+      <div class="q-body">
+        <div class="split-grid">
+          <div class="split-pane sql-pane-card">
+            <div class="split-pane-header">&#x1F5C4; SQL</div>
+            <pre><code class="language-sql">-- Method 1: Window function (clean, no subquery)
+SELECT employee_id, name, department, salary,
+  AVG(salary) OVER (PARTITION BY department) AS dept_avg
+FROM employees
+WHERE salary > AVG(salary) OVER (PARTITION BY department);
+-- NOTE: WHERE can't use window functions directly.
+-- Wrap in a CTE:
+
+WITH avgs AS (
+  SELECT *,
+    AVG(salary) OVER (PARTITION BY department) AS dept_avg
+  FROM employees
+)
+SELECT employee_id, name, department,
+       salary, ROUND(dept_avg,2) AS dept_avg
+FROM avgs
+WHERE salary > dept_avg
+ORDER BY department, salary DESC;
+
+-- Method 2: Correlated subquery
+SELECT employee_id, name, department, salary
+FROM employees e1
+WHERE salary > (
+  SELECT AVG(salary)
+  FROM employees e2
+  WHERE e2.department = e1.department
+);</code></pre>
+          </div>
+          <div class="split-pane py-pane-card">
+            <div class="split-pane-header">&#x1F40D; PySpark</div>
+            <pre><code class="language-python">from pyspark.sql.functions import avg, col
+from pyspark.sql.window import Window
+
+dept_win = Window.partitionBy("department")
+
+result = (df.withColumn("dept_avg", avg("salary").over(dept_win))
+            .filter(col("salary") > col("dept_avg"))
+            .select("employee_id","name","department","salary","dept_avg")
+            .orderBy("department", col("salary").desc()))
+result.show()
+</code></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div><!-- /concept set 2 -->
+
+
+  <!-- ══ CONCEPT SET 3: RUNNING TOTALS ═════════════════════════ -->
+  <div class="concept-group">
+    <div class="concept-label"><span>&#x1F4C8; Set 3 — Running Totals & Aggregations</span></div>
+
+    <div class="q-card">
+      <div class="q-header" onclick="toggle(this)">
+        <div class="q-num">8</div>
+        <div class="q-title-wrap">
+          <div class="q-title">Running total of salaries per department — and running total of sales per customer</div>
+          <div class="q-tags"><span class="q-tag tag-code">Running Total</span><span class="q-tag tag-pattern">Window Function</span></div>
+        </div>
+        <div class="q-chevron">▼</div>
+      </div>
+      <div class="q-body">
+        <div class="schema-box">
+          <strong>Tables:</strong> <code>employees(employee_id, name, department, salary, hire_date)</code> &nbsp;|&nbsp; <code>orders(order_id, customer_id, order_date, amount)</code>
+        </div>
+        <div class="split-grid">
+          <div class="split-pane sql-pane-card">
+            <div class="split-pane-header">&#x1F5C4; SQL — Running Total (department salaries)</div>
+            <pre><code class="language-sql">-- Running total of salaries per department,
+-- ordered by employee_id
+SELECT
+  employee_id, name, department, salary,
+  SUM(salary) OVER (PARTITION BY department ORDER BY employee_id
+              ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS running_salary_total
+FROM employees
+ORDER BY department, employee_id;
+
+-- Running total of sales per customer
+SELECT
+  order_id, customer_id, order_date, amount,
+  SUM(amount) OVER (PARTITION BY customer_id ORDER BY order_date
+                ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS running_revenue
+FROM orders
+ORDER BY customer_id, order_date;</code></pre>
+          </div>
+          <div class="split-pane py-pane-card">
+            <div class="split-pane-header">&#x1F40D; PySpark</div>
+            <pre><code class="language-python">from pyspark.sql.functions import sum as _sum, col
+from pyspark.sql.window import Window
+
+# Running total of salaries per department
+dept_run = (Window.partitionBy("department").orderBy("employee_id")\
+                  .rowsBetween(Window.unboundedPreceding, Window.currentRow))
+emp_df.withColumn("running_salary_total",_sum("salary").over(dept_run)).show()
+
+# Running total of sales per customer
+cust_run = (Window.partitionBy("customer_id").orderBy("order_date")\
+                  .rowsBetween(Window.unboundedPreceding, Window.currentRow))
+orders_df.withColumn("running_revenue",_sum("amount").over(cust_run)).show()
+</code></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="q-card">
+      <div class="q-header" onclick="toggle(this)">
+        <div class="q-num">9</div>
+        <div class="q-title-wrap">
+          <div class="q-title">Calculate total revenue per customer using Orders and Order_Items tables</div>
+          <div class="q-tags"><span class="q-tag tag-code">Join + Aggregation</span></div>
+        </div>
+        <div class="q-chevron">▼</div>
+      </div>
+      <div class="q-body">
+        <div class="schema-box">
+          <strong>orders:</strong> <code>order_id</code>, <code>customer_id</code>, <code>order_date</code>, <code>status</code><br>
+          <strong>order_items:</strong> <code>item_id</code>, <code>order_id</code>, <code>product_id</code>, <code>quantity</code>, <code>unit_price</code>
+        </div>
+        <div class="split-grid">
+          <div class="split-pane sql-pane-card">
+            <div class="split-pane-header">&#x1F5C4; SQL</div>
+            <pre><code class="language-sql">SELECT
+  o.customer_id,
+  SUM(oi.quantity * oi.unit_price) AS total_revenue,
+  COUNT(DISTINCT o.order_id)       AS total_orders,
+  MIN(o.order_date)                AS first_order,
+  MAX(o.order_date)                AS latest_order
+FROM orders o
+JOIN order_items oi ON o.order_id = oi.order_id
+WHERE o.status != 'CANCELLED'   -- exclude cancelled orders
+GROUP BY o.customer_id
+ORDER BY total_revenue DESC;</code></pre>
+          </div>
+          <div class="split-pane py-pane-card">
+            <div class="split-pane-header">&#x1F40D; PySpark</div>
+            <pre><code class="language-python">from pyspark.sql.functions import (
+  sum as _sum, count, countDistinct,
+  col, min as _min, max as _max
+)
+
+orders = spark.read.format("delta").load("/mnt/delta/orders")
+items  = spark.read.format("delta").load("/mnt/delta/order_items")
+
+items = items.withColumn(
+  "line_total", col("quantity") * col("unit_price")
+)
+
+result = (orders.filter(col("status") != "CANCELLED")
+                .join(items, "order_id", "inner")
+                .groupBy("customer_id")
+              .agg(_sum("line_total").alias("total_revenue"),
+                  countDistinct("order_id").alias("total_orders"),
+                  _min("order_date").alias("first_order"),
+                  _max("order_date").alias("latest_order"))
+                  .orderBy(col("total_revenue").desc()))
+result.show(20)
+</code></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="q-card">
+      <div class="q-header" onclick="toggle(this)">
+        <div class="q-num">10</div>
+        <div class="q-title-wrap">
+          <div class="q-title">Find departments with more than 5 employees — and employees who joined in the last 6 months</div>
+          <div class="q-tags"><span class="q-tag tag-code">Filter + Aggregation</span></div>
+        </div>
+        <div class="q-chevron">▼</div>
+      </div>
+      <div class="q-body">
+        <div class="split-grid">
+          <div class="split-pane sql-pane-card">
+            <div class="split-pane-header">&#x1F5C4; SQL</div>
+            <pre><code class="language-sql">-- Departments with more than 5 employees
+SELECT department, COUNT(*) AS emp_count
+FROM employees
+GROUP BY department
+HAVING COUNT(*) > 5
+ORDER BY emp_count DESC;
+
+-- Employees who joined in the last 6 months
+SELECT employee_id, name, department, hire_date
+FROM employees
+WHERE hire_date >= DATEADD(MONTH, -6, GETDATE())
+  -- PostgreSQL: hire_date >= NOW() - INTERVAL '6 months'
+  -- BigQuery:   hire_date >= DATE_SUB(CURRENT_DATE(),
+  --                                   INTERVAL 6 MONTH)
+ORDER BY hire_date DESC;</code></pre>
+          </div>
+          <div class="split-pane py-pane-card">
+            <div class="split-pane-header">&#x1F40D; PySpark</div>
+            <pre><code class="language-python">from pyspark.sql.functions import (
+  count, col, add_months, current_date
+)
+
+# Departments with more than 5 employees
+dept_counts = (df.groupBy("department")
+                .agg(count("*").alias("emp_count"))
+                .filter(col("emp_count") > 5)
+                .orderBy(col("emp_count").desc()))
+dept_counts.show()
+
+# Employees who joined in the last 6 months
+six_months_ago = add_months(current_date(), -6)
+
+recent = (df.filter(col("hire_date") >= six_months_ago)
+            .orderBy(col("hire_date").desc()))
+recent.show()
+</code></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div><!-- /concept set 3 -->
+
+
+  <!-- ══ CONCEPT SET 4: CUSTOMER ANALYTICS ════════════════════ -->
+  <div class="concept-group">
+    <div class="concept-label"><span>&#x1F6D2; Set 4 — Customer & Sales Analytics</span></div>
+
+    <div class="q-card">
+      <div class="q-header" onclick="toggle(this)">
+        <div class="q-num">11</div>
+        <div class="q-title-wrap">
+          <div class="q-title">Customers who spent the most in the last month (based on order_date)</div>
+          <div class="q-tags"><span class="q-tag tag-code">Date Filter</span><span class="q-tag tag-pattern">Top-N</span></div>
+        </div>
+        <div class="q-chevron">▼</div>
+      </div>
+      <div class="q-body">
+        <div class="schema-box">
+          <strong>orders:</strong> <code>order_id</code>, <code>customer_id</code>, <code>order_date</code> &nbsp;|&nbsp; <strong>order_items:</strong> <code>order_id</code>, <code>quantity</code>, <code>unit_price</code>
+        </div>
+        <div class="split-grid">
+          <div class="split-pane sql-pane-card">
+            <div class="split-pane-header">&#x1F5C4; SQL</div>
+            <pre><code class="language-sql">-- Top spenders last calendar month
+SELECT
+  o.customer_id,
+  SUM(oi.quantity * oi.unit_price) AS total_spent
+FROM orders o
+JOIN order_items oi ON o.order_id = oi.order_id
+WHERE o.order_date >= DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month')
+  AND o.order_date <  DATE_TRUNC('month', CURRENT_DATE)
+GROUP BY o.customer_id
+ORDER BY total_spent DESC
+LIMIT 10;
+
+-- SQL Server version:
+-- WHERE order_date >= DATEADD(MONTH,
+--         DATEDIFF(MONTH, 0, GETDATE())-1, 0)
+--   AND order_date <  DATEADD(MONTH,
+--         DATEDIFF(MONTH, 0, GETDATE()), 0)</code></pre>
+          </div>
+          <div class="split-pane py-pane-card">
+            <div class="split-pane-header">&#x1F40D; PySpark</div>
+            <pre><code class="language-python">from pyspark.sql.functions import (
+  sum as _sum, col, add_months,
+  date_trunc, current_date
+)
+
+# Last month start and end
+this_month_start = date_trunc("month", current_date())
+last_month_start = add_months(this_month_start, -1)
+
+items = items.withColumn("line_total", col("quantity") * col("unit_price"))
+
+result = (orders.filter((col("order_date") >= last_month_start) & (col("order_date") <  this_month_start))
+                .join(items, "order_id")
+                .groupBy("customer_id")
+                .agg(_sum("line_total").alias("total_spent"))
+                .orderBy(col("total_spent").desc()))
+result.show(10)
+</code></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="q-card">
+      <div class="q-header" onclick="toggle(this)">
+        <div class="q-num">12</div>
+        <div class="q-title-wrap">
+          <div class="q-title">Find customers whose monthly orders grew this month compared to last month</div>
+          <div class="q-tags"><span class="q-tag tag-code">MoM Growth</span><span class="q-tag tag-pattern">LAG / Pivot</span></div>
+        </div>
+        <div class="q-chevron">▼</div>
+      </div>
+      <div class="q-body">
+        <div class="split-grid">
+          <div class="split-pane sql-pane-card">
+            <div class="split-pane-header">&#x1F5C4; SQL</div>
+            <pre><code class="language-sql">WITH monthly AS (
+  SELECT
+    customer_id,
+    DATE_TRUNC('month', order_date) AS month,
+    COUNT(*)                        AS order_count,
+    SUM(amount)                     AS total_spent
+  FROM orders
+  GROUP BY customer_id, DATE_TRUNC('month', order_date)
+),
+with_prev AS (
+  SELECT *,
+    LAG(order_count) OVER (PARTITION BY customer_id ORDER BY month) AS prev_order_count
+  FROM monthly
+)
+SELECT customer_id, month,
+       order_count AS this_month,
+       prev_order_count AS last_month,
+       order_count - prev_order_count AS growth
+FROM with_prev
+WHERE month = DATE_TRUNC('month', CURRENT_DATE)
+  AND order_count > COALESCE(prev_order_count, 0)
+ORDER BY growth DESC;</code></pre>
+          </div>
+          <div class="split-pane py-pane-card">
+            <div class="split-pane-header">&#x1F40D; PySpark</div>
+            <pre><code class="language-python">from pyspark.sql.functions import (
+  date_trunc, count, sum as _sum,
+  col, lag, current_date, add_months, coalesce, lit
+)
+from pyspark.sql.window import Window
+
+orders = spark.read.format("delta").load("/mnt/delta/orders")
+orders = orders.withColumn("month", date_trunc("month", col("order_date")))
+
+monthly = (orders.groupBy("customer_id", "month")
+                .agg(count("*").alias("order_count"),
+                  _sum("amount").alias("total_spent")))
+
+cust_win = Window.partitionBy("customer_id").orderBy("month")
+
+with_prev = monthly.withColumn("prev_count", lag("order_count", 1).over(cust_win))
+
+this_month = date_trunc("month", current_date())
+result = (with_prev.filter(col("month") == this_month)
+                   .filter(col("order_count") > coalesce(col("prev_count"), lit(0)))
+                   .withColumn("growth", col("order_count") - coalesce(col("prev_count"), lit(0)))
+                   .orderBy(col("growth").desc()))
+result.show()
+</code></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="q-card">
+      <div class="q-header" onclick="toggle(this)">
+        <div class="q-num">13</div>
+        <div class="q-title-wrap">
+          <div class="q-title">PySpark: Customers who spent more than ₹1000 from store S1 in the last month (Customer + Store + Sales)</div>
+          <div class="q-tags"><span class="q-tag tag-code">Multi-Table Join</span><span class="q-tag tag-pattern">PySpark</span></div>
+        </div>
+        <div class="q-chevron">▼</div>
+      </div>
+      <div class="q-body">
+        <div class="schema-box">
+          <strong>customers:</strong> <code>customer_id</code>, <code>name</code>, <code>city</code><br>
+          <strong>stores:</strong> <code>store_id</code>, <code>store_name</code>, <code>region</code><br>
+          <strong>sales:</strong> <code>sale_id</code>, <code>customer_id</code>, <code>store_id</code>, <code>sale_date</code>, <code>amount</code>
+        </div>
+        <div class="split-grid">
+          <div class="split-pane sql-pane-card">
+            <div class="split-pane-header">&#x1F5C4; SQL</div>
+            <pre><code class="language-sql">SELECT
+  c.customer_id,
+  c.name,
+  SUM(s.amount) AS total_spent
+FROM sales s
+JOIN customers c ON s.customer_id = c.customer_id
+JOIN stores  st ON s.store_id     = st.store_id
+WHERE st.store_name = 'S1'
+  AND s.sale_date >= ADD_MONTHS(TRUNC(SYSDATE,'MM'),-1)
+  AND s.sale_date <  TRUNC(SYSDATE,'MM')
+GROUP BY c.customer_id, c.name
+HAVING SUM(s.amount) > 1000
+ORDER BY total_spent DESC;</code></pre>
+          </div>
+          <div class="split-pane py-pane-card">
+            <div class="split-pane-header">&#x1F40D; PySpark</div>
+            <pre><code class="language-python">from pyspark.sql.functions import (
+  sum as _sum, col, add_months,
+  date_trunc, current_date
+)
+
+customers = spark.read.format("delta").load("/mnt/delta/customers")
+stores    = spark.read.format("delta").load("/mnt/delta/stores")
+sales     = spark.read.format("delta").load("/mnt/delta/sales")
+
+# Date range: last calendar month
+this_month = date_trunc("month", current_date())
+last_month = add_months(this_month, -1)
+
+# Step 1: Filter to store S1
+store_s1 = stores.filter(col("store_name") == "S1").select("store_id")
+
+# Step 2: Filter sales to last month + store S1
+filtered_sales = (sales.join(store_s1, "store_id", "inner")
+                      .filter((col("sale_date") >= last_month) &
+                      (col("sale_date") <  this_month)))
+
+# Step 3: Aggregate + filter threshold + join customers
+result = (filtered_sales.groupBy("customer_id")
+                      .agg(_sum("amount").alias("total_spent"))
+                      .filter(col("total_spent") > 1000)
+                      .join(customers, "customer_id", "inner")
+                      .select("customer_id","name","total_spent")
+                      .orderBy(col("total_spent").desc()))
+result.show()
+</code></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div><!-- /concept set 4 -->
+
+
+  <!-- ══ CONCEPT SET 5: LARGE FILE PROCESSING ═════════════════ -->
+  <div class="concept-group">
+    <div class="concept-label"><span>&#x1F4C2; Set 5 — Processing Large Files & Nested Data</span></div>
+
+    <div class="q-card">
+      <div class="q-header" onclick="toggle(this)">
+        <div class="q-num">14</div>
+        <div class="q-title-wrap">
+          <div class="q-title">Read and process a large CSV file efficiently in Python / PySpark</div>
+          <div class="q-tags"><span class="q-tag tag-code">Python</span><span class="q-tag tag-perf">Large Files</span></div>
+        </div>
+        <div class="q-chevron">▼</div>
+      </div>
+      <div class="q-body">
+        <p>For truly large files, PySpark is almost always the right answer. But sometimes you need Python-only (memory-efficient chunking). Here are both approaches:</p>
+        <div class="split-grid">
+          <div class="split-pane sql-pane-card">
+            <div class="split-pane-header">&#x1F40D; Python (Pandas — chunked, memory-safe)</div>
+            <pre><code class="language-python">import pandas as pd
+from typing import Iterator
+
+# --- Approach 1: chunked reading ---
+CHUNK_SIZE = 100_000  # rows per chunk
+results = []
+
+for chunk in pd.read_csv(
+    "large_file.csv",
+    chunksize=CHUNK_SIZE,
+    dtype={"amount": float, "customer_id": str},
+    parse_dates=["order_date"],
+    usecols=["customer_id","amount","order_date"],
+    na_values=["", "NULL", "N/A"]
+):
+    # Filter and aggregate per chunk
+    filtered = chunk[chunk["amount"] > 0]
+    agg = (filtered
+        .groupby("customer_id")["amount"]
+        .sum()
+        .reset_index()
+    )
+    results.append(agg)
+
+# Combine all chunks
+final = (pd.concat(results)
+    .groupby("customer_id")["amount"]
+    .sum()
+    .reset_index()
+    .sort_values("amount", ascending=False)
+)
+print(final.head(20))
+
+# --- Approach 2: Polars (faster than Pandas) ---
+import polars as pl
+
+df = (pl.scan_csv("large_file.csv")   # lazy scan
+        .filter(pl.col("amount") > 0)
+        .groupby("customer_id")
+        .agg(pl.col("amount").sum())
+        .sort("amount", descending=True)
+        .collect()                     # execute
+)
+print(df.head(20))
+</code></pre>
+          </div>
+          <div class="split-pane py-pane-card">
+            <div class="split-pane-header">&#x1F40D; PySpark (recommended for large scale)</div>
+            <pre><code class="language-python">from pyspark.sql import SparkSession
+from pyspark.sql.functions import col, sum as _sum
+from pyspark.sql.types import (
+  StructType, StructField,
+  StringType, DoubleType, DateType
+)
+
+spark = (SparkSession.builder
+  .appName("LargeCSVProcessing")
+  .config("spark.sql.shuffle.partitions", "400")
+  .getOrCreate()
+)
+
+# Always define schema explicitly in production
+schema = StructType([
+  StructField("customer_id", StringType(), False),
+  StructField("order_id",    StringType(), False),
+  StructField("order_date",  DateType(),   True),
+  StructField("amount",      DoubleType(), True),
+  StructField("status",      StringType(), True),
+])
+
+df = (spark.read
+  .option("header", "true")
+  .option("dateFormat", "yyyy-MM-dd")
+  .option("mode", "PERMISSIVE")  # handle bad rows
+  .option("columnNameOfCorruptRecord", "_corrupt_record")
+  .schema(schema)
+  .csv("/mnt/data/large_file.csv")
+)
+
+# Cache if used multiple times
+df.cache()
+
+# Process: filter, aggregate
+result = (df.filter(col("amount") > 0)
+            .filter(col("status") != "CANCELLED")
+            .groupBy("customer_id")
+            .agg(_sum("amount").alias("total_spent"))
+            .orderBy(col("total_spent").desc()))
+
+result.write.format("delta") \
+    .mode("overwrite") \
+    .save("/mnt/delta/customer_totals")
+</code></pre>
+          </div>
+        </div>
+        <div class="callout tip"><span class="callout-icon">&#x1F4A1;</span><div>Key efficiency tips: <strong>define schema</strong> (no inferSchema), <strong>pushdown filters early</strong> (filter before join), <strong>use Parquet not CSV</strong> in production (10x faster reads), <strong>select only columns you need</strong> before any transformation.</div></div>
+      </div>
+    </div>
+
+    <div class="q-card">
+      <div class="q-header" onclick="toggle(this)">
+        <div class="q-num">15</div>
+        <div class="q-title-wrap">
+          <div class="q-title">PySpark: Process nested JSON trip data (real-world scenario)</div>
+          <div class="q-tags"><span class="q-tag tag-code">Nested JSON</span><span class="q-tag tag-pattern">PySpark</span></div>
+        </div>
+        <div class="q-chevron">▼</div>
+      </div>
+      <div class="q-body">
+        <div class="schema-box">
+          <strong>Sample JSON structure:</strong><br>
+          <code>{ "trip_id": "T1", "driver": {"id": "D1", "name": "Raj"}, "waypoints": [{"seq": 1, "lat": 12.9, "lng": 77.6, "ts": "2024-01-15T10:00:00"}, ...], "fare": {"base": 50, "surcharge": 10, "total": 60} }</code>
+        </div>
+        <div class="split-pane py-pane-card" style="width:100%; border-radius:var(--radius)">
+          <div class="split-pane-header">&#x1F40D; PySpark — Full Nested JSON Processing</div>
+          <pre><code class="language-python">from pyspark.sql import SparkSession
+from pyspark.sql.functions import (
+  col, explode_outer, to_timestamp,
+  round as _round
+)
+
+spark = SparkSession.builder.getOrCreate()
+
+# Read raw JSON (multiline for pretty-printed files)
+raw = spark.read \
+    .option("multiline", "true") \
+    .json("/mnt/raw/trips/*.json")
+
+raw.printSchema()
+# root
+#  |-- trip_id:    string
+#  |-- driver:     struct (id, name)
+#  |-- waypoints:  array  (seq, lat, lng, ts)
+#  |-- fare:       struct (base, surcharge, total)
+
+# ── Step 1: Flatten top-level structs ────────────────
+trips = raw.select(
+  col("trip_id"),
+  col("driver.id").alias("driver_id"),
+  col("driver.name").alias("driver_name"),
+  col("fare.base").alias("fare_base"),
+  col("fare.surcharge").alias("fare_surcharge"),
+  col("fare.total").alias("fare_total"),
+  col("waypoints")   # keep array for next step
+)
+
+# ── Step 2: Explode waypoints array ──────────────────
+waypoints = trips.select(
+  col("trip_id"),
+  col("driver_id"),
+  col("fare_total"),
+  explode_outer(col("waypoints")).alias("wp")
+).select(
+  col("trip_id"),
+  col("driver_id"),
+  col("fare_total"),
+  col("wp.seq").alias("waypoint_seq"),
+  col("wp.lat").alias("latitude"),
+  col("wp.lng").alias("longitude"),
+  to_timestamp(col("wp.ts")).alias("waypoint_ts")
+)
+
+waypoints.show(5)
+
+# ── Step 3: Aggregations on trip level ───────────────
+from pyspark.sql.functions import (
+  count, sum as _sum, min as _min, max as _max
+)
+
+trip_summary = (waypoints
+  .groupBy("trip_id", "driver_id", "fare_total")
+  .agg(
+    count("waypoint_seq").alias("total_waypoints"),
+    _min("waypoint_ts").alias("trip_start"),
+    _max("waypoint_ts").alias("trip_end")
+  )
+)
+trip_summary.show()
+
+# ── Step 4: Write to Delta ────────────────────────────
+waypoints.write.format("delta") \
+    .partitionBy("driver_id") \
+    .mode("overwrite") \
+    .save("/mnt/delta/trip_waypoints")
+
+trip_summary.write.format("delta") \
+    .mode("overwrite") \
+    .save("/mnt/delta/trip_summary")
+</code></pre>
+        </div>
+      </div>
+    </div>
+  </div><!-- /concept set 5 -->
+
+
+  <!-- ══ CONCEPT SET 6: NORMALIZATION, INDEXING ══════════════ -->
+  <div class="concept-group">
+    <div class="concept-label"><span>&#x1F4DA; Set 6 — DB Design Concepts</span></div>
+
+    <div class="q-card">
+      <div class="q-header" onclick="toggle(this)">
+        <div class="q-num">16</div>
+        <div class="q-title-wrap">
+          <div class="q-title">Explain normalization vs denormalization — when would you use each in a data engineering context?</div>
+          <div class="q-tags"><span class="q-tag tag-fund">DB Design</span></div>
+        </div>
+        <div class="q-chevron">▼</div>
+      </div>
+      <div class="q-body">
+        <p><strong>Normalization</strong> eliminates redundancy by splitting data into multiple related tables (1NF → 2NF → 3NF). Each piece of information is stored exactly once. Benefits: consistent writes, smaller storage, no update anomalies. Best for OLTP systems (transactional databases — banking, e-commerce orders).</p>
+        <p><strong>Denormalization</strong> intentionally introduces redundancy by merging tables or pre-computing aggregations. Benefits: fewer JOINs, faster reads, simpler queries. Best for OLAP systems (data warehouses, reporting) where read performance matters more than write efficiency.</p>
+        <ul>
+          <li><strong>Data Engineering rule of thumb:</strong> Normalize at the source/Bronze layer (preserve raw fidelity). Denormalize at the Gold layer (optimize for BI queries — flat wide tables, pre-joined dimensions).</li>
+          <li><strong>Synapse Dedicated Pool:</strong> Replicated dimension tables (fully denormalized, no JOINs needed) + Hash-distributed fact tables = classic denormalized star schema.</li>
+          <li><strong>Delta Lake:</strong> Use Delta tables at Silver (normalized, ACID) → Gold (wide denormalized tables optimized for reporting).</li>
+        </ul>
+        <div class="callout info"><span class="callout-icon">&#x1F4CC;</span><div>In most modern data lakehouses: <strong>Normalize for correctness</strong> (Bronze/Silver) → <strong>Denormalize for performance</strong> (Gold/Serving layer).</div></div>
+      </div>
+    </div>
+
+    <div class="q-card">
+      <div class="q-header" onclick="toggle(this)">
+        <div class="q-num">17</div>
+        <div class="q-title-wrap">
+          <div class="q-title">A SQL query is running very slow on a large table. How would you troubleshoot and optimize it? You receive duplicate data from a source system — how do you handle it in your pipeline?</div>
+          <div class="q-tags"><span class="q-tag tag-debug">Optimization</span><span class="q-tag tag-pattern">Pipeline Design</span></div>
+        </div>
+        <div class="q-chevron">▼</div>
+      </div>
+      <div class="q-body">
+        <p><strong>Slow query — troubleshooting order:</strong></p>
+        <ol>
+          <li><strong>Run EXPLAIN / EXPLAIN ANALYZE</strong> — find the most expensive node (full table scan, sort, nested loop join).</li>
+          <li><strong>Check for missing indexes</strong> on filter and join columns.</li>
+          <li><strong>Check statistics are fresh</strong> — stale stats lead to bad execution plans. Run UPDATE STATISTICS or ANALYZE.</li>
+          <li><strong>Rewrite predicate</strong> — remove functions on indexed columns, use range conditions instead of BETWEEN on dates.</li>
+          <li><strong>Check JOIN order</strong> — filter the smallest set first before joining large tables.</li>
+          <li><strong>Add covering index</strong> if the query selects few columns from a heavily filtered table.</li>
+          <li><strong>Partition pruning</strong> — ensure the query's WHERE clause aligns with partition keys in Synapse or Delta.</li>
+          <li><strong>In Synapse:</strong> check for data skew with DBCC PDW_SHOWSPACEUSED, update statistics, add BROADCAST hints on small tables.</li>
+        </ol>
+        <p><strong>Handling duplicate data from source in a pipeline:</strong></p>
+        <ul>
+          <li><strong>At ingestion (Bronze):</strong> Load raw data as-is — never deduplicate at Bronze. Log the duplicate count as an audit metric.</li>
+          <li><strong>At Silver (cleansing):</strong> Deduplicate using ROW_NUMBER() or <code>dropDuplicates()</code> on natural keys. Define a clear "winner" rule (latest timestamp, highest sequence number).</li>
+          <li><strong>Use Delta MERGE</strong> into Silver/Gold with <code>WHEN MATCHED THEN UPDATE</code> — naturally idempotent, handles re-delivered records.</li>
+          <li><strong>Add a data quality check</strong> after dedup — assert uniqueness on the key column and alert if violation detected.</li>
+          <li><strong>Alert source team</strong> — duplicate data from source is a data contract violation. Raise it so the root cause is fixed upstream.</li>
+        </ul>
+      </div>
+    </div>
+  </div><!-- /concept set 6 -->
+
+  <!-- ══ BONUS ESSENTIALS ══════════════════════════════════════ -->
+  <div class="concept-group">
+    <div class="concept-label"><span>&#x2B50; Bonus — Essential Patterns Every Data Engineer Must Know</span></div>
+
+    <div class="q-card">
+      <div class="q-header" onclick="toggle(this)">
+        <div class="q-num">18</div>
+        <div class="q-title-wrap">
+          <div class="q-title">Slowly Changing Dimension (SCD Type 2) — track historical changes in dimension records</div>
+          <div class="q-tags"><span class="q-tag tag-pattern">SCD Type 2</span><span class="q-tag tag-code">MERGE</span></div>
+        </div>
+        <div class="q-chevron">▼</div>
+      </div>
+      <div class="q-body">
+        <div class="schema-box">
+          <strong>dim_customers:</strong> <code>surrogate_key</code>, <code>customer_id</code>, <code>name</code>, <code>city</code>, <code>effective_from</code>, <code>effective_to</code>, <code>is_current</code>
+        </div>
+        <div class="split-grid">
+          <div class="split-pane sql-pane-card">
+            <div class="split-pane-header">&#x1F5C4; SQL — SCD Type 2 MERGE</div>
+            <pre><code class="language-sql">-- Expire old records that changed
+UPDATE dim_customers
+SET effective_to = CAST(GETDATE() AS DATE),
+    is_current = 0
+WHERE customer_id IN (
+  SELECT s.customer_id
+  FROM stg_customers s
+  JOIN dim_customers d
+    ON s.customer_id = d.customer_id
+    AND d.is_current = 1
+  WHERE s.city <> d.city   -- attribute changed
+);
+
+-- Insert new version for changed records
+INSERT INTO dim_customers
+  (customer_id, name, city,
+   effective_from, effective_to, is_current)
+SELECT s.customer_id, s.name, s.city,
+  CAST(GETDATE() AS DATE),
+  '9999-12-31',
+  1
+FROM stg_customers s
+JOIN dim_customers d
+  ON s.customer_id = d.customer_id
+WHERE d.is_current = 0
+  AND d.effective_to = CAST(GETDATE() AS DATE);
+
+-- Insert brand new customers
+INSERT INTO dim_customers
+  (customer_id, name, city,
+   effective_from, effective_to, is_current)
+SELECT s.customer_id, s.name, s.city,
+  CAST(GETDATE() AS DATE), '9999-12-31', 1
+FROM stg_customers s
+WHERE s.customer_id NOT IN (
+  SELECT customer_id FROM dim_customers
+);</code></pre>
+          </div>
+          <div class="split-pane py-pane-card">
+            <div class="split-pane-header">&#x1F40D; PySpark — SCD Type 2 with Delta MERGE</div>
+            <pre><code class="language-python">from delta.tables import DeltaTable
+from pyspark.sql.functions import (
+  lit, current_date, col
+)
+
+dim = DeltaTable.forPath(spark, "/mnt/delta/dim_customers")
+stg = spark.read.format("delta").load("/mnt/delta/stg_customers")
+
+# Step 1: Expire records where attribute changed
+(dim.alias("d").merge(stg.alias("s"),
+    "d.customer_id = s.customer_id AND d.is_current = 1")
+  .whenMatchedUpdate(
+    condition="s.city != d.city",
+    set={"effective_to": "current_date()",
+          "is_current":   "0"}).execute())
+
+# Step 2: Insert new versions for changed + new customers
+dim_df = dim.toDF()
+existing = dim_df.filter("is_current = 1") \
+                 .select("customer_id","city")
+
+# Find changed customers
+changed = (stg.join(existing, "customer_id")
+  .filter(stg["city"] != existing["city"])
+  .select(stg["*"])
+)
+
+# Find brand new customers
+new_custs = stg.join(
+  dim_df.select("customer_id").distinct(),
+  "customer_id", "left_anti"
+)
+
+to_insert = (changed.union(new_custs)
+  .withColumn("effective_from", current_date())
+  .withColumn("effective_to",   lit("9999-12-31").cast("date"))
+  .withColumn("is_current",     lit(1))
+)
+
+to_insert.write.format("delta") \
+    .mode("append") \
+    .save("/mnt/delta/dim_customers")
+</code></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="q-card">
+      <div class="q-header" onclick="toggle(this)">
+        <div class="q-num">19</div>
+        <div class="q-title-wrap">
+          <div class="q-title">Pivot and Unpivot — transform rows to columns and back</div>
+          <div class="q-tags"><span class="q-tag tag-code">Pivot</span><span class="q-tag tag-pattern">Reshape</span></div>
+        </div>
+        <div class="q-chevron">▼</div>
+      </div>
+      <div class="q-body">
+        <div class="schema-box">
+          <strong>sales:</strong> <code>customer_id</code>, <code>month</code> (Jan/Feb/Mar…), <code>revenue</code>
+        </div>
+        <div class="split-grid">
+          <div class="split-pane sql-pane-card">
+            <div class="split-pane-header">&#x1F5C4; SQL — PIVOT</div>
+            <pre><code  class="language-sql">-- SQL Server PIVOT
+SELECT customer_id, [Jan], [Feb], [Mar]
+FROM (
+  SELECT customer_id, month, revenue FROM sales
+) src
+PIVOT (
+  SUM(revenue)
+  FOR month IN ([Jan], [Feb], [Mar])
+) pvt;
+
+-- Standard SQL (CASE WHEN approach, works everywhere)
+SELECT customer_id,
+  SUM(CASE WHEN month='Jan' THEN revenue ELSE 0 END) AS Jan,
+  SUM(CASE WHEN month='Feb' THEN revenue ELSE 0 END) AS Feb,
+  SUM(CASE WHEN month='Mar' THEN revenue ELSE 0 END) AS Mar
+FROM sales
+GROUP BY customer_id;</code></pre>
+          </div>
+          <div class="split-pane py-pane-card">
+            <div class="split-pane-header">&#x1F40D; PySpark — groupBy + pivot</div>
+            <pre><code class="language-python">from pyspark.sql.functions import sum as _sum
+
+# Pivot: rows (customer_id, month, revenue)
+# → columns (customer_id, Jan, Feb, Mar)
+pivoted = (sales_df.groupBy("customer_id")
+                   .pivot("month", ["Jan", "Feb", "Mar"])
+                   .agg(_sum("revenue")))
+pivoted.show()
+
+# Unpivot (stack columns back to rows)
+from pyspark.sql.functions import expr, stack
+
+unpivoted = pivoted.select("customer_id",
+                  expr("""
+                    stack(3,
+                      'Jan', Jan,
+                      'Feb', Feb,
+                      'Mar', Mar
+                    ) AS (month, revenue)
+                  """))
+unpivoted.show()
+</code></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="q-card">
+      <div class="q-header" onclick="toggle(this)">
+        <div class="q-num">20</div>
+        <div class="q-title-wrap">
+          <div class="q-title">NULL handling — COALESCE, NULLIF, ISNULL — and common traps</div>
+          <div class="q-tags"><span class="q-tag tag-fund">NULL Handling</span><span class="q-tag tag-code">SQL</span></div>
+        </div>
+        <div class="q-chevron">▼</div>
+      </div>
+      <div class="q-body">
+        <div class="split-grid">
+          <div class="split-pane sql-pane-card">
+            <div class="split-pane-header">&#x1F5C4; SQL — NULL Functions</div>
+            <pre><code class="language-sql">-- COALESCE: return first non-null value
+SELECT COALESCE(phone, mobile, 'No Contact') AS contact
+FROM customers;
+
+-- NULLIF: return NULL if two values are equal
+-- (avoid divide-by-zero)
+SELECT revenue / NULLIF(units, 0) AS revenue_per_unit
+FROM sales;
+
+-- IS NULL / IS NOT NULL (never use = NULL)
+SELECT * FROM orders WHERE discount IS NULL;
+
+-- NULL in aggregations (NULL is ignored by SUM, AVG)
+-- but COUNT(*) counts NULLs, COUNT(col) does not!
+SELECT
+  COUNT(*)          AS total_rows,      -- includes NULLs
+  COUNT(discount)   AS rows_with_disc,  -- excludes NULLs
+  AVG(discount)     AS avg_disc,        -- ignores NULLs
+  AVG(COALESCE(discount, 0)) AS avg_disc_with_zero
+FROM orders;
+
+-- NULL in JOIN: NULL != NULL, so NULLs never join
+-- Use IS NULL check after a LEFT JOIN to find unmatched
+SELECT o.*, c.name
+FROM orders o
+LEFT JOIN customers c ON o.customer_id = c.customer_id
+WHERE c.customer_id IS NULL;  -- orders with no customer!</code></pre>
+          </div>
+          <div class="split-pane py-pane-card">
+            <div class="split-pane-header">&#x1F40D; PySpark — NULL handling</div>
+            <pre><code class="language-python">from pyspark.sql.functions import (
+  coalesce, lit, isnull, when, col,
+  count, isnan
+)
+
+# COALESCE equivalent
+df.withColumn("contact", coalesce(col("phone"), col("mobile"), lit("No Contact")))
+
+# Replace NULLs
+df.fillna({"discount": 0, "city": "Unknown"})
+
+# Drop rows where key columns are null
+df.dropna(subset=["customer_id", "order_date"])
+
+# Count NULLs per column (data quality check)
+from pyspark.sql.functions import sum as _sum
+null_counts = df.select([_sum(isnull(c).cast("int")).alias(c) for c in df.columns])
+null_counts.show()
+
+# Filter NULLs (use isNull(), not == None)
+df.filter(col("discount").isNull())
+df.filter(col("discount").isNotNull())
+
+# Safe division (avoid divide by zero)
+df.withColumn("rev_per_unit", when(col("units") != 0,
+                            col("revenue") / col("units")).otherwise(None))
+</code></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="q-card">
+      <div class="q-header" onclick="toggle(this)">
+        <div class="q-num">21</div>
+        <div class="q-title-wrap">
+          <div class="q-title">Date functions cheat-sheet — date filtering, truncation, add_months, datediff</div>
+          <div class="q-tags"><span class="q-tag tag-code">Date Functions</span><span class="q-tag tag-fund">Essential</span></div>
+        </div>
+        <div class="q-chevron">▼</div>
+      </div>
+      <div class="q-body">
+        <div class="split-grid">
+          <div class="split-pane sql-pane-card">
+            <div class="split-pane-header">&#x1F5C4; SQL Date Functions</div>
+            <pre><code class="language-sql">-- Current date/time
+SELECT GETDATE(), CURRENT_DATE, NOW();
+
+-- Truncate to month/year start
+SELECT DATE_TRUNC('month', order_date)  -- PostgreSQL/Synapse
+SELECT DATEADD(MONTH,
+  DATEDIFF(MONTH, 0, order_date), 0)    -- SQL Server
+
+-- Add/subtract time
+SELECT DATEADD(DAY,   -7,  GETDATE())   -- 7 days ago
+SELECT DATEADD(MONTH, -1,  GETDATE())   -- 1 month ago
+SELECT DATEADD(YEAR,  -1,  GETDATE())   -- 1 year ago
+
+-- Difference between dates
+SELECT DATEDIFF(DAY, hire_date, GETDATE()) AS days_employed
+SELECT DATEDIFF(MONTH, order_date, GETDATE()) AS months_ago
+
+-- Extract parts
+SELECT YEAR(order_date), MONTH(order_date),
+       DAY(order_date),  DATEPART(QUARTER, order_date)
+
+-- Format
+SELECT FORMAT(order_date, 'yyyy-MM-dd')
+SELECT CONVERT(VARCHAR, order_date, 23)
+
+-- Last day of month
+SELECT EOMONTH(GETDATE())
+SELECT EOMONTH(GETDATE(), -1)  -- last day of prev month</code></pre>
+          </div>
+          <div class="split-pane py-pane-card">
+            <div class="split-pane-header">&#x1F40D; PySpark Date Functions</div>
+            <pre><code class="language-python">from pyspark.sql.functions import (
+  current_date, current_timestamp,
+  date_trunc, add_months, date_add,
+  datediff, months_between,
+  year, month, dayofmonth, quarter,
+  date_format, last_day,
+  to_date, to_timestamp
+)
+
+df = df.withColumn("today", current_date())
+
+# Truncate to month start
+df.withColumn("month_start", date_trunc("month", col("order_date")))
+
+# Add / subtract
+df.withColumn("next_month",  add_months(col("order_date"),  1))
+df.withColumn("prev_month",  add_months(col("order_date"), -1))
+df.withColumn("week_ago",    date_add(col("order_date"),   -7))
+
+# Differences
+df.withColumn("days_diff", datediff(current_date(), col("order_date")))
+df.withColumn("months_diff", months_between(current_date(), col("order_date")).cast("int"))
+
+# Extract parts
+df.withColumn("yr",  year(col("order_date")))
+df.withColumn("mth", month(col("order_date")))
+df.withColumn("day", dayofmonth(col("order_date")))
+df.withColumn("qtr", quarter(col("order_date")))
+
+# Format
+df.withColumn("fmt_date", date_format(col("order_date"), "yyyy-MM-dd"))
+
+# Parse strings to date
+df.withColumn("parsed_date", to_date(col("date_str"), "dd/MM/yyyy"))
+
+# Last day of month
+df.withColumn("month_end", last_day(col("order_date")))
+</code></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div><!-- /bonus -->
+
+</div><!-- /coding -->
+
+  </main>
+</div><!-- /layout -->
+
+<script>
+function show(id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item button').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  event.currentTarget.classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function toggle(header) {
+  const card = header.closest('.q-card');
+  const isOpen = card.classList.contains('open');
+  document.querySelectorAll('.q-card.open').forEach(c => c.classList.remove('open'));
+  if (!isOpen) card.classList.add('open');
+}
+
+function switchTab(btn, paneId) {
+  const tabs = btn.closest('.code-tabs');
+  tabs.querySelectorAll('.code-tab-btn').forEach(b => b.classList.remove('active'));
+  tabs.querySelectorAll('.code-pane').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  tabs.querySelector('#' + paneId).classList.add('active');
+}
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
+</body>
+</html>
