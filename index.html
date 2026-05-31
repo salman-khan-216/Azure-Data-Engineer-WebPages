@@ -1023,7 +1023,7 @@ WITH (FILE_TYPE = 'PARQUET', CREDENTIAL = (IDENTITY = 'Managed Identity'));</cod
         <li><strong>Non-deterministic:</strong> schema can silently change if source data changes, breaking downstream code without any obvious error.</li>
       </ul>
       <p><strong>Predefined schema (StructType)</strong> — you explicitly declare every column name and type before reading:</p>
-      <pre><code>schema = StructType([
+      <pre><code class="language-python">schema = StructType([
     StructField("order_id", IntegerType(), False),
     StructField("amount", DoubleType(), True),
     StructField("created_at", TimestampType(), True)
@@ -1174,7 +1174,7 @@ df = spark.read.schema(schema).json("path/to/data")</code></pre>
     <div class="q-body">
       <p><strong>Standard UDF:</strong> A Python function registered to run row-by-row. Spark cannot optimize it — it's a black box. Each row is serialized from JVM → Python process → processed → serialized back. This overhead is enormous, and UDFs disable Catalyst optimizations like predicate pushdown.</p>
       <p><strong>Vectorized UDF (pandas_udf):</strong> Data is batched into Pandas Series using Apache Arrow for zero-copy serialization. Much faster — typically 3-10x compared to row-at-a-time UDFs.</p>
-      <pre><code>from pyspark.sql.functions import pandas_udf
+      <pre><code class="language-python">from pyspark.sql.functions import pandas_udf
 import pandas as pd
 
 @pandas_udf("double")
@@ -1366,7 +1366,7 @@ df_flat.show()</code></pre>
     <div class="q-header" onclick="toggle(this)"><div class="q-num">14</div><div class="q-title-wrap"><div class="q-title">Distributed Variables in Spark — Broadcast Variables & Accumulators</div><div class="q-tags"><span class="q-tag tag-fund">Spark Internals</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p><strong>Broadcast Variables:</strong> Normally, any variable used inside a transformation is serialized and sent to each task (once per task, potentially thousands of copies). Broadcast Variables send the data once to each executor (not each task) and cache it in memory there. All tasks on that executor share one copy.</p>
-      <pre><code>lookup_dict = {"NY": "New York", "CA": "California"}
+      <pre><code class="language-python">lookup_dict = {"NY": "New York", "CA": "California"}
 broadcast_dict = spark.sparkContext.broadcast(lookup_dict)
 
 # Inside transformation - all tasks on same executor share one copy
@@ -1396,7 +1396,7 @@ print(f"Bad records found: {bad_records.value}")</code></pre>
         <li><strong>concurrent.futures.ThreadPoolExecutor:</strong> Thread-based parallelism. Best for I/O-bound tasks (API calls, file reads, DB connections) where most time is waiting, not computing. GIL is released during I/O.</li>
         <li><strong>asyncio:</strong> Single-threaded async. Best for high-concurrency I/O (hundreds of API calls simultaneously) without thread overhead.</li>
       </ul>
-      <pre><code">from concurrent.futures import ThreadPoolExecutor, as_completed
+      <pre><code class="language-python">from concurrent.futures import ThreadPoolExecutor, as_completed
 
 tables = ["orders", "customers", "products", "inventory"]
 
@@ -1472,7 +1472,7 @@ with ThreadPoolExecutor(max_workers=4) as executor:
         <li><strong>Delta Lake MERGE on micro-batch:</strong> In foreachBatch, MERGE incoming data into Delta table on the unique key. Naturally idempotent — duplicate events update the same row instead of creating two.</li>
         <li><strong>Redis/Cosmos DB state store:</strong> For longer dedup windows (days/weeks), check an external key-value store for event_id before processing. Write event_id to store after successful processing. Works across streaming restarts unlike Spark's in-memory state.</li>
       </ul>
-      <pre><code"># Structured Streaming dedup with watermark
+      <pre><code class="language-python"># Structured Streaming dedup with watermark
 (spark.readStream.format("kafka")...
   .withWatermark("event_time", "10 minutes")
   .dropDuplicates(["event_id"])  # keeps first occurrence per window
@@ -1497,7 +1497,7 @@ with ThreadPoolExecutor(max_workers=4) as executor:
     <div class="q-header" onclick="toggle(this)"><div class="q-num">1</div><div class="q-title-wrap"><div class="q-title">How do you implement Row-Level Deletions in Delta Lake without rewriting the entire partition?</div><div class="q-tags"><span class="q-tag tag-pattern">Delta Operations</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p>Traditional Parquet is immutable — deleting a row requires rewriting the entire file. Delta Lake introduces row-level deletes via a two-step mechanism:</p>
-      <pre><code>from delta.tables import DeltaTable
+      <pre><code class="language-python">from delta.tables import DeltaTable
 
 dt = DeltaTable.forPath(spark, "/mnt/delta/orders")
 dt.delete("order_id = 12345")
@@ -1551,7 +1551,7 @@ spark.sql("DELETE FROM orders WHERE order_id = 12345")</code></pre>
     <div class="q-body">
       <p><strong>With AQE enabled:</strong> AQE monitors shuffle statistics mid-query. If a partition is more than 5x the median size (and larger than 256MB), AQE splits that partition into sub-partitions and processes them in parallel. Completely transparent — no code changes needed.</p>
       <p><strong>Manually without AQE (Salting):</strong></p>
-      <pre><code>from pyspark.sql.functions import rand, lit, concat, col, explode, array
+      <pre><code class="language-python">from pyspark.sql.functions import rand, lit, concat, col, explode, array
 
 N = 10  # salt factor
 # Skewed (large) side - append random salt
@@ -1611,7 +1611,7 @@ result = big.join(small, "key_s").drop("salt", "key_s")</code></pre>
     <div class="q-header" onclick="toggle(this)"><div class="q-num">3</div><div class="q-title-wrap"><div class="q-title">Explain the MERGE statement. How is it different from UPSERT?</div><div class="q-tags"><span class="q-tag tag-code">Code</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p>UPSERT is a concept: insert if a record doesn't exist, update if it does. MERGE is the SQL statement that implements this — and more. MERGE is a superset of UPSERT — it can handle UPDATE, INSERT, and DELETE in one atomic statement.</p>
-      <pre><code>MERGE INTO target_table AS t
+      <pre><code class="language-sql">MERGE INTO target_table AS t
 USING source_table AS s
 ON t.order_id = s.order_id
 WHEN MATCHED AND s.amount != t.amount THEN
@@ -1628,7 +1628,7 @@ WHEN NOT MATCHED BY SOURCE THEN
   <div class="q-card">
     <div class="q-header" onclick="toggle(this)"><div class="q-num">4</div><div class="q-title-wrap"><div class="q-title">Write a SQL approach to identify duplicate records using multiple columns.</div><div class="q-tags"><span class="q-tag tag-code">Code</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
-      <pre><code>-- Method 1: Find groups with duplicates
+      <pre><code class="language-sql">-- Method 1: Find groups with duplicates
 SELECT order_id, customer_id, product_id, COUNT(*) AS duplicate_count
 FROM orders
 GROUP BY order_id, customer_id, product_id
@@ -1637,10 +1637,8 @@ HAVING COUNT(*) > 1;
 -- Method 2: ROW_NUMBER to tag and inspect duplicates
 WITH ranked AS (
     SELECT *,
-        ROW_NUMBER() OVER (
-            PARTITION BY order_id, customer_id, product_id
-            ORDER BY created_at DESC  -- keep the latest
-        ) AS rn
+        ROW_NUMBER() OVER (PARTITION BY order_id, customer_id, product_id
+            ORDER BY created_at DESC  -- keep the latest) AS rn
     FROM orders
 )
 SELECT * FROM ranked WHERE rn > 1;  -- these are the duplicates
@@ -1648,10 +1646,8 @@ SELECT * FROM ranked WHERE rn > 1;  -- these are the duplicates
 -- Method 3: Delete duplicates, keep the latest
 WITH ranked AS (
     SELECT id,
-        ROW_NUMBER() OVER (
-            PARTITION BY order_id, customer_id, product_id
-            ORDER BY created_at DESC
-        ) AS rn
+        ROW_NUMBER() OVER (PARTITION BY order_id, customer_id, product_id
+            ORDER BY created_at DESC) AS rn
     FROM orders
 )
 DELETE FROM orders WHERE id IN (SELECT id FROM ranked WHERE rn > 1);</code></pre>
@@ -1662,7 +1658,7 @@ DELETE FROM orders WHERE id IN (SELECT id FROM ranked WHERE rn > 1);</code></pre
     <div class="q-header" onclick="toggle(this)"><div class="q-num">5</div><div class="q-title-wrap"><div class="q-title">Write a SQL query to find consecutive login days for users.</div><div class="q-tags"><span class="q-tag tag-code">Code</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <div class="callout info"><span class="callout-icon">&#x1F4A1;</span><div>Key insight: if logins are consecutive, <code>date - ROW_NUMBER()</code> produces the same constant value for all days in a streak. That constant becomes the group key.</div></div>
-      <pre><code>WITH deduped AS (
+      <pre><code class="language-sql">WITH deduped AS (
     -- Remove duplicate logins on the same day
     SELECT DISTINCT user_id, CAST(login_time AS DATE) AS login_date
     FROM user_logins
@@ -1693,7 +1689,7 @@ ORDER BY consecutive_days DESC;</code></pre>
     <div class="q-header" onclick="toggle(this)"><div class="q-num">6</div><div class="q-title-wrap"><div class="q-title">How would you implement data masking in Azure SQL for sensitive columns?</div><div class="q-tags"><span class="q-tag tag-sec">Security</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p><strong>Dynamic Data Masking (DDM)</strong> is applied at the column definition level. Users without the UNMASK permission see masked values. Data is not changed on disk — masking is applied at query time.</p>
-      <pre><code>-- Add masking to existing columns
+      <pre><code class="language-sql">-- Add masking to existing columns
 ALTER TABLE customers ALTER COLUMN email
     ADD MASKED WITH (FUNCTION = 'email()');            -- aXXX@XXXX.com
 
@@ -1736,7 +1732,7 @@ GRANT UNMASK ON customers TO data_engineer_role;</code></pre>
       <div class="split-grid">
         <div class="split-pane sql-pane-card">
           <div class="split-pane-header">&#x1F5C4; SQL</div>
-          <pre><code>-- LEFT JOIN: keeps ALL employees even without dept
+          <pre><code class="language-sql">-- LEFT JOIN: keeps ALL employees even without dept
 SELECT
   e.employee_id,
   e.name,
@@ -1759,27 +1755,20 @@ INNER JOIN departments d ON e.department_id = d.department_id;</code></pre>
         </div>
         <div class="split-pane py-pane-card">
           <div class="split-pane-header">&#x1F40D; PySpark</div>
-          <pre><code">from pyspark.sql.functions import coalesce, lit
+          <pre><code class="language-python">from pyspark.sql.functions import coalesce, lit
 
 emp  = spark.read.format("delta").load("/mnt/delta/employees")
 dept = spark.read.format("delta").load("/mnt/delta/departments")
 
 # LEFT JOIN - keep all employees
-result = (emp
-  .join(dept, "department_id", "left")
-  .withColumn(
-    "department",
-    coalesce("department_name", lit("Not Assigned"))
-  )
-  .select("employee_id","name","department")
-  .orderBy("department","name")
-)
+result = (emp.join(dept, "department_id", "left")
+             .withColumn("department", coalesce("department_name", lit("Not Assigned")))
+             .select("employee_id","name","department")
+             .orderBy("department","name"))
 result.show()
 
 # Employees with NO department
-no_dept = (emp
-  .join(dept, "department_id", "left_anti")
-)
+no_dept = (emp.join(dept, "department_id", "left_anti"))
 no_dept.show()
 </code></pre>
         </div>
@@ -1796,12 +1785,11 @@ no_dept.show()
       <div class="split-grid">
         <div class="split-pane sql-pane-card">
           <div class="split-pane-header">&#x1F5C4; SQL</div>
-          <pre><code">SELECT
+          <pre><code class="language-sql">SELECT
   sale_date,
   product_id,
   units_sold,
-  AVG(units_sold) OVER (
-    PARTITION BY product_id
+  AVG(units_sold) OVER (PARTITION BY product_id
     ORDER BY sale_date
     ROWS BETWEEN 2 PRECEDING AND CURRENT ROW
     -- "current row + 2 rows before it" = 3-day window
@@ -1822,25 +1810,19 @@ ORDER BY product_id, sale_date;
         </div>
         <div class="split-pane py-pane-card">
           <div class="split-pane-header">&#x1F40D; PySpark</div>
-          <pre><code">from pyspark.sql.functions import avg, round as _round, col
+          <pre><code class="language-python">from pyspark.sql.functions import avg, round as _round, col
 from pyspark.sql.window import Window
 
 # 3-day moving average window
-win = (Window
-  .partitionBy("product_id")
-  .orderBy("sale_date")
-  .rowsBetween(-2, 0)  # 2 preceding + current = 3 rows
-)
+win = (Window.partitionBy("product_id")
+             .orderBy("sale_date")
+             .rowsBetween(-2, 0))  # 2 preceding + current = 3 rows
 
-result = (df
-  .withColumn("moving_avg_3d",
-    _round(avg("units_sold").over(win), 2)
-  )
-  .orderBy("product_id", "sale_date")
-)
-result.select(
-  "sale_date","product_id","units_sold","moving_avg_3d"
-).show()
+result = (df.withColumn("moving_avg_3d",
+    _round(avg("units_sold").over(win), 2))
+   .orderBy("product_id", "sale_date"))
+            
+result.select("sale_date","product_id","units_sold","moving_avg_3d").show()
 
 # 7-day moving average: rowsBetween(-6, 0)
 # 30-day: rowsBetween(-29, 0)
@@ -1860,7 +1842,7 @@ result.select(
       <div class="split-grid">
         <div class="split-pane sql-pane-card">
           <div class="split-pane-header">&#x1F5C4; SQL</div>
-          <pre><code">WITH deduped AS (
+          <pre><code class="language-sql">WITH deduped AS (
   -- Remove duplicate logins on same day
   SELECT DISTINCT employee_id,
     CAST(login_date AS DATE) AS login_date
@@ -1868,10 +1850,7 @@ result.select(
 ),
 numbered AS (
   SELECT employee_id, login_date,
-    ROW_NUMBER() OVER (
-      PARTITION BY employee_id
-      ORDER BY login_date
-    ) AS rn
+    ROW_NUMBER() OVER (PARTITION BY employee_id ORDER BY login_date) AS rn
   FROM deduped
 ),
 grouped AS (
@@ -1896,7 +1875,7 @@ ORDER BY employee_id, streak_length DESC;
         </div>
         <div class="split-pane py-pane-card">
           <div class="split-pane-header">&#x1F40D; PySpark</div>
-          <pre><code">from pyspark.sql.functions import (
+          <pre><code class="language-python">from pyspark.sql.functions import (
   col, row_number, date_add, min as _min,
   max as _max, count, to_date, datediff, lit
 )
@@ -1905,10 +1884,7 @@ from pyspark.sql.window import Window
 df = spark.read.format("delta").load("/mnt/delta/logins")
 
 # Step 1: Deduplicate (one login per employee per day)
-deduped = df.select(
-  "employee_id",
-  to_date("login_date").alias("login_date")
-).distinct()
+deduped = df.select("employee_id", to_date("login_date").alias("login_date")).distinct()
 
 # Step 2: Number rows per employee ordered by date
 win = Window.partitionBy("employee_id").orderBy("login_date")
@@ -1917,10 +1893,7 @@ numbered = deduped.withColumn("rn", row_number().over(win))
 # Step 3: Compute streak group = date - rn (days offset)
 # Consecutive dates give the same offset → same group
 from pyspark.sql.functions import expr
-grouped = numbered.withColumn(
-  "streak_grp",
-  expr("date_sub(login_date, rn)")
-)
+grouped = numbered.withColumn("streak_grp", expr("date_sub(login_date, rn)"))
 
 # Step 4: Aggregate to find streaks
 streaks = (grouped
@@ -1946,14 +1919,11 @@ streaks.show()
       <div class="split-grid">
         <div class="split-pane sql-pane-card">
           <div class="split-pane-header">&#x1F5C4; SQL</div>
-          <pre><code">-- Method 1: ROW_NUMBER (most readable)
+          <pre><code class="language-sql">-- Method 1: ROW_NUMBER (most readable)
 WITH ranked AS (
   SELECT
     user_id, login_time,
-    ROW_NUMBER() OVER (
-      PARTITION BY user_id
-      ORDER BY login_time DESC
-    ) AS rn
+    ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY login_time DESC) AS rn
   FROM user_logins
 )
 SELECT user_id, login_time AS second_recent_login
@@ -1963,34 +1933,26 @@ FROM ranked WHERE rn = 2;
 WITH with_prev AS (
   SELECT
     user_id, login_time,
-    LAG(login_time, 1) OVER (
-      PARTITION BY user_id
-      ORDER BY login_time DESC
-    ) AS one_before  -- this is actually the 2nd most recent
+    LAG(login_time, 1) OVER (PARTITION BY user_id ORDER BY login_time DESC) AS one_before  -- this is actually the 2nd most recent
   FROM user_logins
 )
 SELECT DISTINCT user_id,
-  FIRST_VALUE(login_time) OVER (
-    PARTITION BY user_id ORDER BY login_time ASC
-  ) AS second_recent_login
+  FIRST_VALUE(login_time) OVER (PARTITION BY user_id ORDER BY login_time ASC) AS second_recent_login
 FROM with_prev
 WHERE one_before IS NOT NULL;
 -- Simpler: just use Method 1 (ROW_NUMBER = 2)</code></pre>
         </div>
         <div class="split-pane py-pane-card">
           <div class="split-pane-header">&#x1F40D; PySpark</div>
-          <pre><code">from pyspark.sql.functions import row_number, col
+          <pre><code class="language-python">from pyspark.sql.functions import row_number, col
 from pyspark.sql.window import Window
 
-win = Window.partitionBy("user_id") \
-            .orderBy(col("login_time").desc())
+win = Window.partitionBy("user_id").orderBy(col("login_time").desc())
 
-result = (df
-  .withColumn("rn", row_number().over(win))
-  .filter(col("rn") == 2)
-  .select("user_id", "login_time")
-  .withColumnRenamed("login_time", "second_recent_login")
-)
+result = (df.withColumn("rn", row_number().over(win))
+            .filter(col("rn") == 2)
+            .select("user_id", "login_time")
+            .withColumnRenamed("login_time", "second_recent_login"))
 result.show()
 </code></pre>
         </div>
@@ -2161,7 +2123,7 @@ ranked = df.withColumn("rn", row_number().over(window))
 deduped = ranked.filter(col("rn") == 1).drop("rn")
 
 # Write back
-deduped.write.mode("overwrite").format("delta") \.save("/mnt/delta/customers_clean")
+deduped.write.mode("overwrite").format("delta").save("/mnt/delta/customers_clean")
 
 # Verify
 print(f"Before: {df.count()}, After: {deduped.count()}")
@@ -2943,9 +2905,7 @@ ORDER BY total_spent DESC;</code></pre>
           <div class="split-pane py-pane-card">
             <div class="split-pane-header">&#x1F40D; PySpark</div>
             <pre><code class="language-python">from pyspark.sql.functions import (
-  sum as _sum, col, add_months,
-  date_trunc, current_date
-)
+  sum as _sum, col, add_months, date_trunc, current_date)
 
 customers = spark.read.format("delta").load("/mnt/delta/customers")
 stores    = spark.read.format("delta").load("/mnt/delta/stores")
