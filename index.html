@@ -665,7 +665,7 @@
     margin: 10px 0;
   }
   .challenge-card h4 { font-size: 13.5px; font-weight: 700; color: var(--orange); margin-bottom: 6px; }
-  .challenge-card p { font-size: 14px; color: #5D4037; line-height: 1.7; margin: 0; }
+  .challenge-card p { font-size: 14px; line-height: 1.7; margin: 0; }
   .cert-badge {
     display: inline-flex; align-items: center; gap: 5px;
     background: #E8F5E9; border: 1px solid #A5D6A7; border-radius: 6px;
@@ -683,7 +683,7 @@
   <div class="hero-inner">
     <div class="hero-badge">&#x1F4CB; Interview Prep</div>
     <div class="hero-badge">&#x1F4CB; <a href="databricks.html" style="text-decoration: none; color: inherit;">Databricks</a> </div> 
-    <div class="hero-badge">&#x1F4CB; <a href="old.html" style="text-decoration: none; color: inherit;">Old</a> </div> 
+    <div class="hero-badge">&#x1F4CB; <a href="index1.html" style="text-decoration: none; color: inherit;">Old</a> </div> 
     <h1>Azure <span>Data Engineering</span><br>Interview Guide</h1>
     <p class="hero-sub">Comprehensive Q&A reference covering architecture patterns, pipeline design, performance tuning, coding and security best practices.</p>
   </div>
@@ -847,7 +847,7 @@
 
 <div id="general" class="section">
   <div class="sec-header">
-    <div class="sec-icon" style="background:#EBF3FF">&#x1F3D7;</div>
+    <div class="sec-icon">&#x1F3D7;</div>
     <div><div class="sec-title">General & System Design</div><div class="sec-desc">Architecture patterns, scaling, cost optimization, debugging</div></div>
   </div>
 
@@ -990,7 +990,7 @@
 ═══════════════════════════════════════════════════════════ -->
 <div id="adf" class="section">
   <div class="sec-header">
-    <div class="sec-icon" style="background:#EAF4FB">&#x2601;&#xFE0F;</div>
+    <div class="sec-icon">&#x2601;&#xFE0F;</div>
     <div><div class="sec-title">Azure Data Factory</div><div class="sec-desc">Integration runtime, pipelines, parameterization, error handling</div></div>
   </div>
 
@@ -1139,7 +1139,7 @@
 ═══════════════════════════════════════════════════════════ -->
 <div id="synapse" class="section">
   <div class="sec-header">
-    <div class="sec-icon" style="background:#EDE7F6">&#x1F4CA;</div>
+    <div class="sec-icon">&#x1F4CA;</div>
     <div><div class="sec-title">Azure Synapse Analytics</div><div class="sec-desc">Distribution, HNS, Serverless vs Dedicated, workload management, security</div></div>
   </div>
 
@@ -1224,7 +1224,7 @@ WITH (FILE_TYPE = 'PARQUET', CREDENTIAL = (IDENTITY = 'Managed Identity'));</cod
 ═══════════════════════════════════════════════════════════ -->
 <div id="databricks" class="section">
   <div class="sec-header">
-    <div class="sec-icon" style="background:#FFF3E0">&#x1F525;</div>
+    <div class="sec-icon">&#x1F525;</div>
     <div><div class="sec-title">Azure Databricks</div><div class="sec-desc">OOM troubleshooting, monitoring, schema management, ETL frameworks</div></div>
   </div>
 
@@ -1392,7 +1392,7 @@ df = spark.read.schema(schema).json("path/to/data")</code></pre>
 ═══════════════════════════════════════════════════════════ -->
 <div id="pyspark" class="section">
   <div class="sec-header">
-    <div class="sec-icon" style="background:#E8F5E9">&#x26A1;</div>
+    <div class="sec-icon">&#x26A1;</div>
     <div><div class="sec-title">PySpark</div><div class="sec-desc">Skew, UDFs, partitioning, memory, AQE, streaming, nested JSON</div></div>
   </div>
 
@@ -1729,7 +1729,7 @@ with ThreadPoolExecutor(max_workers=4) as executor:
 ═══════════════════════════════════════════════════════════ -->
 <div id="delta" class="section">
   <div class="sec-header">
-    <div class="sec-icon" style="background:#E3F2FD">&#x1F4C0;</div>
+    <div class="sec-icon">&#x1F4C0;</div>
     <div><div class="sec-title">Delta Lake</div><div class="sec-desc">Row-level deletes, compaction, data skipping, Z-ordering, skew joins</div></div>
   </div>
 
@@ -1813,7 +1813,7 @@ result = big.join(small, "key_s").drop("salt", "key_s")</code></pre>
 ═══════════════════════════════════════════════════════════ -->
 <div id="sql" class="section">
   <div class="sec-header">
-    <div class="sec-icon" style="background:#F3E5F5">&#x1F5C4;</div>
+    <div class="sec-icon">&#x1F5C4;</div>
     <div><div class="sec-title">SQL</div><div class="sec-desc">Query optimization, indexing, MERGE, duplicates, consecutive logins, masking</div></div>
   </div>
 
@@ -2206,7 +2206,7 @@ result.show()
 ═══════════════════════════════════════════════════════════ -->
 <div id="security" class="section">
   <div class="sec-header">
-    <div class="sec-icon" style="background:#FCE4EC">&#x1F512;</div>
+    <div class="sec-icon">&#x1F512;</div>
     <div><div class="sec-title">Security & Secrets Management</div><div class="sec-desc">Key Vault, Managed Identity, Column/Row-Level Security, schema evolution</div></div>
   </div>
 
@@ -2285,7 +2285,7 @@ REVOKE SELECT (ssn, credit_card) ON TABLE customers FROM analyst_role;</code></p
 ═══════════════════════════════════════════════════════════ -->
 <div id="coding" class="section">
   <div class="sec-header">
-    <div class="sec-icon" style="background:#F3E5F5">&#x1F4BB;</div>
+    <div class="sec-icon">&#x1F4BB;</div>
     <div>
       <div class="sec-title">Coding — SQL & PySpark</div>
       <div class="sec-desc">Real interview problems grouped by concept. Each problem shows SQL + PySpark solution side-by-side.</div>
@@ -3773,7 +3773,7 @@ df.withColumn("month_end", last_day(col("order_date")))
 ═══════════════════════════════════════════════════════════ -->
 <div id="datamodel" class="section">
   <div class="sec-header">
-    <div class="sec-icon" style="background:#E0F7FA">&#x1F9E9;</div>
+    <div class="sec-icon">&#x1F9E9;</div>
     <div><div class="sec-title">Data Modelling</div><div class="sec-desc">Star schema, SCD, normalization, PII masking, Delta Lake skipping, M:N relationships, monitoring</div></div>
   </div>
 
@@ -4059,7 +4059,7 @@ def validate_df(df, name):
 ═══════════════════════════════════════════════════════════ -->
 <div id="hr" class="section">
   <div class="sec-header">
-    <div class="sec-icon" style="background:#FCE4EC">&#x1F91D;</div>
+    <div class="sec-icon">&#x1F91D;</div>
     <div><div class="sec-title">HR & Managerial Questions</div><div class="sec-desc">Direct answers for behavioral, situational, and managerial questions. Adapt names/numbers to your real experience.</div></div>
   </div>
 
