@@ -697,16 +697,17 @@
     <p class="sidebar-label">Categories</p>
     <ul class="nav-list">
       <li class="nav-item"><button onclick="show('intro')" class="active"><span class="nav-dot"></span>Self Intro<span class="nav-count">3</span></button></li>
-      <li class="nav-item"><button onclick="show('general')"><span class="nav-dot"></span>General & Design<span class="nav-count">6</span></button></li>
+      <li class="nav-item"><button onclick="show('handy')"><span class="nav-dot"></span>Handy Questions<span class="nav-count">10</span></button></li>
+      <li class="nav-item"><button onclick="show('general')"><span class="nav-dot"></span>General & Design<span class="nav-count">7</span></button></li>
       <li class="nav-item"><button onclick="show('sql')"><span class="nav-dot"></span>SQL<span class="nav-count">11</span></button></li>
-      <li class="nav-item"><button onclick="show('pyspark')"><span class="nav-dot"></span>PySpark<span class="nav-count">18</span></button></li>
+      <li class="nav-item"><button onclick="show('pyspark')"><span class="nav-dot"></span>PySpark<span class="nav-count">13</span></button></li>
       <li class="nav-item"><button onclick="show('databricks')"><span class="nav-dot"></span>Databricks<span class="nav-count">10</span></button></li>
       <li class="nav-item"><button onclick="show('delta')"><span class="nav-dot"></span>Delta Lake<span class="nav-count">5</span></button></li>
-      <li class="nav-item"><button onclick="show('adf')"><span class="nav-dot"></span>Azure Data Factory<span class="nav-count">10</span></button></li>
-      <li class="nav-item"><button onclick="show('synapse')"><span class="nav-dot"></span>Synapse Analytics<span class="nav-count">6</span></button></li>
+      <li class="nav-item"><button onclick="show('adf')"><span class="nav-dot"></span>Azure Data Factory<span class="nav-count">11</span></button></li>
+      <li class="nav-item"><button onclick="show('synapse')"><span class="nav-dot"></span>Synapse Analytics<span class="nav-count">11</span></button></li>
       <li class="nav-item"><button onclick="show('security')"><span class="nav-dot"></span>Security & Secrets<span class="nav-count">5</span></button></li>
       <li class="nav-item"><button onclick="show('coding')"><span class="nav-dot"></span>Coding<span class="nav-count">22</span></button></li>
-      <li class="nav-item"><button onclick="show('datamodel')"><span class="nav-dot"></span>Data Modelling<span class="nav-count">15</span></button></li>
+      <li class="nav-item"><button onclick="show('datamodel')"><span class="nav-dot"></span>Data Modelling<span class="nav-count">16</span></button></li>
       <li class="nav-item"><button onclick="show('hr')"><span class="nav-dot"></span>HR & Managerial<span class="nav-count">20</span></button></li>
     </ul>
   </aside>
@@ -874,6 +875,8 @@
     </div>
   </div>
 
+   
+
   <!-- Q2 -->
   <div class="q-card">
     <div class="q-header" onclick="toggle(this)">
@@ -983,6 +986,27 @@
       <div class="callout info"><span class="callout-icon">&#x1F6E0;</span> <div>Tools: <strong>ADF Monitor</strong> → Pipeline Runs → Activity runs. <strong>Databricks</strong> Job Run history for Spark logs. <strong>Azure Monitor + Log Analytics</strong> for pattern analysis across runs.</div></div>
     </div>
   </div>
+
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">7</div><div class="q-title-wrap"><div class="q-title">You received duplicate records in streaming data — how do you handle deduplication?</div><div class="q-tags"><span class="q-tag tag-pattern">Streaming</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-body">
+      <p>Streaming deduplication is harder than batch because you can't see the full dataset — you only see a window of data. Duplicates arrive due to: exactly-once delivery failures, network retries, producer restarts.</p>
+      <p><strong>Approaches:</strong></p>
+      <ul>
+        <li><strong>Structured Streaming built-in dedup:</strong> <code>df.withWatermark("event_time", "10 minutes").dropDuplicates(["event_id", "event_time"])</code> — Spark maintains a state store of seen event IDs within the watermark window. Events outside the watermark are assumed gone (trade-off: late events past watermark are dropped).</li>
+        <li><strong>Delta Lake MERGE on micro-batch:</strong> In foreachBatch, MERGE incoming data into Delta table on the unique key. Naturally idempotent — duplicate events update the same row instead of creating two.</li>
+        <li><strong>Redis/Cosmos DB state store:</strong> For longer dedup windows (days/weeks), check an external key-value store for event_id before processing. Write event_id to store after successful processing. Works across streaming restarts unlike Spark's in-memory state.</li>
+      </ul>
+      <pre><code class="language-python"># Structured Streaming dedup with watermark
+(spark.readStream.format("kafka")...
+  .withWatermark("event_time", "10 minutes")
+  .dropDuplicates(["event_id"])  # keeps first occurrence per window
+  .writeStream.format("delta")
+  .option("checkpointLocation", "/mnt/checkpoints/stream1")
+  .start("/mnt/delta/events")
+)</code></pre>
+    </div>
+  </div>
 </div><!-- /general -->
 
 <!-- ════════════════════════════════════════════════════════
@@ -994,86 +1018,8 @@
     <div><div class="sec-title">Azure Data Factory</div><div class="sec-desc">Integration runtime, pipelines, parameterization, error handling</div></div>
   </div>
 
-  <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">1</div><div class="q-title-wrap"><div class="q-title">Under what networking conditions must you use a Self-Hosted Integration Runtime (SHIR) instead of Azure IR?</div><div class="q-tags"><span class="q-tag tag-arch">Networking</span></div></div><div class="q-chevron">▼</div></div>
-    <div class="q-body">
-      <p>The Integration Runtime (IR) is the compute engine that moves data in ADF. <strong>Azure IR</strong> is Microsoft-managed, lives in the cloud, and works for cloud-to-cloud transfers. It requires sources reachable over the public internet.</p>
-      <p>Use <strong>Self-Hosted IR (SHIR)</strong> — a Windows agent installed on a machine in your own network — when:</p>
-      <ul>
-        <li>Data source is <strong>on-premises</strong> (SQL Server, Oracle, SAP) behind a corporate firewall.</li>
-        <li>Source is in a <strong>private VNet</strong> with no public endpoint and no peering to ADF's managed VNet.</li>
-        <li>You need to copy data <strong>between two private networks</strong>.</li>
-        <li>Source requires a <strong>local driver</strong> (ODBC, Oracle client) installed on the IR machine.</li>
-      </ul>
-      <div class="callout tip"><span class="callout-icon">&#x2705;</span><div>The SHIR machine initiates <strong>outbound</strong> connections to ADF's cloud service over port 443 — no inbound firewall rules required.</div></div>
-    </div>
-  </div>
-
-  <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">2</div><div class="q-title-wrap"><div class="q-title">How do you implement a Watermark-based incremental load in ADF to avoid re-processing old data?</div><div class="q-tags"><span class="q-tag tag-pattern">Pattern</span></div></div><div class="q-chevron">▼</div></div>
-    <div class="q-body">
-      <p>A watermark is a "last processed" marker — usually a timestamp or integer ID. Each run fetches only records newer than this marker.</p>
-      <ol>
-        <li>Create a <strong>watermark table</strong> in Azure SQL: <code>CREATE TABLE watermark (table_name VARCHAR, last_value DATETIME)</code></li>
-        <li><strong>Lookup Activity</strong> — read the current watermark value for the target table.</li>
-        <li><strong>Lookup Activity</strong> — read the current MAX value in source: <code>SELECT MAX(updated_at) FROM orders</code></li>
-        <li><strong>Copy Activity</strong> — source query uses both values: <code>WHERE updated_at > old_wm AND updated_at &lt;= new_max</code></li>
-        <li><strong>Stored Procedure Activity</strong> — after successful copy, update the watermark to the new max value.</li>
-      </ol>
-      <div class="callout warn"><span class="callout-icon">&#x26A0;&#xFE0F;</span><div>Capturing the new max <em>before</em> the copy starts prevents late-arriving records from being missed on subsequent runs.</div></div>
-    </div>
-  </div>
-
-  <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">3</div><div class="q-title-wrap"><div class="q-title">What is the difference between Copy Activity and Data Flow in ADF?</div><div class="q-tags"><span class="q-tag tag-fund">Core Concept</span></div></div><div class="q-chevron">▼</div></div>
-    <div class="q-body">
-      <p><strong>Copy Activity</strong> is a lightweight, high-speed data movement tool. It moves data from source to sink with minimal transformation — column renaming, basic type casting. It does <em>not</em> spin up a Spark cluster; it runs on the Integration Runtime directly. Very fast, very cheap. Use it for ingestion — landing raw files in ADLS.</p>
-      <p><strong>Data Flow (Mapping Data Flow)</strong> is a visual, code-free transformation engine backed by Apache Spark. You can join, aggregate, pivot, derive columns, parse JSON, and split streams — all via a drag-and-drop UI. ADF compiles your Data Flow into Spark code and runs it on an auto-created cluster.</p>
-      <div class="callout warn"><span class="callout-icon">&#x1F4B8;</span><div>Data Flow is significantly more expensive — it spins up Spark compute. Only use it when transformation complexity justifies it. For simple copy-and-land, always use Copy Activity.</div></div>
-    </div>
-  </div>
-
-  <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">4</div><div class="q-title-wrap"><div class="q-title">How do you implement parameterization in ADF pipelines?</div><div class="q-tags"><span class="q-tag tag-pattern">Best Practice</span></div></div><div class="q-chevron">▼</div></div>
-    <div class="q-body">
-      <ul>
-        <li><strong>Pipeline parameters:</strong> Defined at pipeline level. Passed when triggering via schedule trigger, event trigger, or Execute Pipeline activity.</li>
-        <li><strong>Dataset parameters:</strong> Make dataset properties dynamic — table name, file path, container name. Reference with <code>@dataset().paramName</code>.</li>
-        <li><strong>Linked Service parameters:</strong> Parameterize connection strings so one linked service handles multiple environments (dev/prod).</li>
-        <li><strong>Global parameters:</strong> Set once at ADF level, available across all pipelines — useful for environment-level config like storage account names.</li>
-        <li><strong>ForEach + parameterized pipeline:</strong> Build a config-driven framework — store table names in a control config, loop with ForEach, call a generic pipeline per table with the table name as a parameter.</li>
-      </ul>
-    </div>
-  </div>
-
-  <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">5</div><div class="q-title-wrap"><div class="q-title">Describe how error handling and retry mechanisms work in ADF.</div><div class="q-tags"><span class="q-tag tag-debug">Reliability</span></div></div><div class="q-chevron">▼</div></div>
-    <div class="q-body">
-      <ul>
-        <li><strong>Activity retry:</strong> Each activity has configurable retry count (default 0) and retry interval. ADF re-runs the failed activity N times before marking it failed. Use for transient failures like network blips and throttling.</li>
-        <li><strong>On Failure path:</strong> Each activity has Success, Failure, and Completion output paths. Connect activities on the Failure path to trigger cleanup, send alerts (Web Activity to Teams webhook), or log errors to a SQL table.</li>
-        <li><strong>Timeout:</strong> Set timeouts on long-running activities to prevent hanging pipelines from consuming resources indefinitely.</li>
-        <li><strong>Fault tolerance in Copy Activity:</strong> Skip incompatible rows and log them to a fault file in ADLS instead of failing the entire copy. Configure under Copy Activity → Settings → Fault tolerance.</li>
-      </ul>
-    </div>
-  </div>
-
-  <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">6</div><div class="q-title-wrap"><div class="q-title">How would you securely migrate on-premises SQL Server data into ADLS Gen2?</div><div class="q-tags"><span class="q-tag tag-sec">Security</span><span class="q-tag tag-arch">Migration</span></div></div><div class="q-chevron">▼</div></div>
-    <div class="q-body">
-      <ol>
-        <li>Install <strong>SHIR</strong> on a machine in the on-prem network that can reach the SQL Server.</li>
-        <li>Create a <strong>Linked Service</strong> in ADF pointing to on-prem SQL Server via the SHIR. Store the password in <strong>Azure Key Vault</strong> — never hardcode credentials.</li>
-        <li>Use <strong>Managed Identity</strong> for ADF to authenticate to ADLS Gen2 — no storage account keys needed.</li>
-        <li>Configure a <strong>Copy Activity</strong> with the on-prem SQL linked service as source and ADLS Gen2 as sink. Use Parquet format for storage efficiency.</li>
-        <li>Ensure <strong>encryption in transit:</strong> SQL Server uses TLS, ADLS uses HTTPS, SHIR to ADF cloud uses TLS over port 443.</li>
-        <li>Implement <strong>incremental load</strong> using watermarks or SQL Server Change Tracking to avoid moving the full dataset on every run.</li>
-        <li>For high-security requirements, use <strong>ExpressRoute or VPN</strong> for private connectivity instead of public internet traversal.</li>
-      </ol>
-    </div>
-  </div>
-  <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">7</div><div class="q-title-wrap"><div class="q-title">ADLS Gen2 vs Azure Blob Storage — what are the key differences?</div><div class="q-tags"><span class="q-tag tag-fund">Storage</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-card">
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">1</div><div class="q-title-wrap"><div class="q-title">ADLS Gen2 vs Azure Blob Storage — what are the key differences?</div><div class="q-tags"><span class="q-tag tag-fund">Storage</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p>Both are Azure object storage, but ADLS Gen2 = Blob Storage <strong>with Hierarchical Namespace (HNS) enabled</strong>. That one feature creates substantial differences:</p>
       <ul>
@@ -1089,7 +1035,111 @@
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">8</div><div class="q-title-wrap"><div class="q-title">How do you handle schema drift in ADF?</div><div class="q-tags"><span class="q-tag tag-debug">Schema Drift</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">2</div><div class="q-title-wrap"><div class="q-title">What is the difference between Copy Activity and Data Flow in ADF?</div><div class="q-tags"><span class="q-tag tag-fund">Core Concept</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-body">
+      <p><strong>Copy Activity</strong> is a lightweight, high-speed data movement tool. It moves data from source to sink with minimal transformation — column renaming, basic type casting. It does <em>not</em> spin up a Spark cluster; it runs on the Integration Runtime directly. Very fast, very cheap. Use it for ingestion — landing raw files in ADLS.</p>
+      <p><strong>Data Flow (Mapping Data Flow)</strong> is a visual, code-free transformation engine backed by Apache Spark. You can join, aggregate, pivot, derive columns, parse JSON, and split streams — all via a drag-and-drop UI. ADF compiles your Data Flow into Spark code and runs it on an auto-created cluster.</p>
+      <div class="callout warn"><span class="callout-icon">&#x1F4B8;</span><div>Data Flow is significantly more expensive — it spins up Spark compute. Only use it when transformation complexity justifies it. For simple copy-and-land, always use Copy Activity.</div></div>
+    </div>
+  </div>
+
+   <div class="q-card">
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">3</div><div class="q-title-wrap"><div class="q-title">What is your approach to designing a fault-tolerant, scalable ETL/ELT pipeline in Azure? What tools and tradeoffs?</div><div class="q-tags"><span class="q-tag tag-arch">Architecture</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-body">
+      <p><strong>Core design principles:</strong></p>
+      <ul>
+        <li><strong>Idempotency:</strong> Every pipeline run must be safe to re-run. Use watermarks, MERGE, or partition overwrite — never append-only without dedup.</li>
+        <li><strong>Modularity:</strong> Break pipelines into discrete stages (ingest, validate, transform, load). Each stage independently testable and restartable. Failure in Gold layer shouldn't require re-ingesting Bronze.</li>
+        <li><strong>Retry + dead-letter:</strong> Configure retry policies (3 attempts, exponential backoff) on every activity. Route bad records to a dead-letter path in ADLS, not pipeline failure.</li>
+        <li><strong>Checkpointing:</strong> For streaming — mandatory. For batch — use ADF pipeline activity dependencies to resume from last successful stage, not restart from scratch.</li>
+        <li><strong>Observability:</strong> Every pipeline writes audit logs (start/end time, row counts, status, error). Azure Monitor alerts on failure. Log Analytics for pattern analysis.</li>
+      </ul>
+      <p><strong>Tool choices and tradeoffs:</strong></p>
+      <ul>
+        <li><strong>ADF (orchestration):</strong> Managed, UI-driven, easy CI/CD. Tradeoff: limited complex logic — move that to Databricks notebooks.</li>
+        <li><strong>Databricks (transformation):</strong> Powerful, scalable Spark. Tradeoff: more expensive than ADF Data Flows; requires Spark expertise.</li>
+        <li><strong>Delta Lake (storage format):</strong> ACID, time travel, schema enforcement. Tradeoff: overhead vs raw Parquet for very simple pipelines.</li>
+        <li><strong>Synapse (serving):</strong> Excellent for BI workloads and multi-user concurrency. Tradeoff: DWU cost is always-on; Serverless SQL is cheaper for ad-hoc but slower for repeated queries.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">4</div><div class="q-title-wrap"><div class="q-title">Under what networking conditions must you use a Self-Hosted Integration Runtime (SHIR) instead of Azure IR?</div><div class="q-tags"><span class="q-tag tag-arch">Networking</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-body">
+      <p>The Integration Runtime (IR) is the compute engine that moves data in ADF. <strong>Azure IR</strong> is Microsoft-managed, lives in the cloud, and works for cloud-to-cloud transfers. It requires sources reachable over the public internet.</p>
+      <p>Use <strong>Self-Hosted IR (SHIR)</strong> — a Windows agent installed on a machine in your own network — when:</p>
+      <ul>
+        <li>Data source is <strong>on-premises</strong> (SQL Server, Oracle, SAP) behind a corporate firewall.</li>
+        <li>Source is in a <strong>private VNet</strong> with no public endpoint and no peering to ADF's managed VNet.</li>
+        <li>You need to copy data <strong>between two private networks</strong>.</li>
+        <li>Source requires a <strong>local driver</strong> (ODBC, Oracle client) installed on the IR machine.</li>
+      </ul>
+      <div class="callout tip"><span class="callout-icon">&#x2705;</span><div>The SHIR machine initiates <strong>outbound</strong> connections to ADF's cloud service over port 443 — no inbound firewall rules required.</div></div>
+    </div>
+  </div>
+
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">5</div><div class="q-title-wrap"><div class="q-title">How do you implement a Watermark-based incremental load in ADF to avoid re-processing old data?</div><div class="q-tags"><span class="q-tag tag-pattern">Pattern</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-body">
+      <p>A watermark is a "last processed" marker — usually a timestamp or integer ID. Each run fetches only records newer than this marker.</p>
+      <ol>
+        <li>Create a <strong>watermark table</strong> in Azure SQL: <code>CREATE TABLE watermark (table_name VARCHAR, last_value DATETIME)</code></li>
+        <li><strong>Lookup Activity</strong> — read the current watermark value for the target table.</li>
+        <li><strong>Lookup Activity</strong> — read the current MAX value in source: <code>SELECT MAX(updated_at) FROM orders</code></li>
+        <li><strong>Copy Activity</strong> — source query uses both values: <code>WHERE updated_at > old_wm AND updated_at &lt;= new_max</code></li>
+        <li><strong>Stored Procedure Activity</strong> — after successful copy, update the watermark to the new max value.</li>
+      </ol>
+      <div class="callout warn"><span class="callout-icon">&#x26A0;&#xFE0F;</span><div>Capturing the new max <em>before</em> the copy starts prevents late-arriving records from being missed on subsequent runs.</div></div>
+    </div>
+  </div>
+
+  
+
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">6</div><div class="q-title-wrap"><div class="q-title">How do you implement parameterization in ADF pipelines?</div><div class="q-tags"><span class="q-tag tag-pattern">Best Practice</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-body">
+      <ul>
+        <li><strong>Pipeline parameters:</strong> Defined at pipeline level. Passed when triggering via schedule trigger, event trigger, or Execute Pipeline activity.</li>
+        <li><strong>Dataset parameters:</strong> Make dataset properties dynamic — table name, file path, container name. Reference with <code>@dataset().paramName</code>.</li>
+        <li><strong>Linked Service parameters:</strong> Parameterize connection strings so one linked service handles multiple environments (dev/prod).</li>
+        <li><strong>Global parameters:</strong> Set once at ADF level, available across all pipelines — useful for environment-level config like storage account names.</li>
+        <li><strong>ForEach + parameterized pipeline:</strong> Build a config-driven framework — store table names in a control config, loop with ForEach, call a generic pipeline per table with the table name as a parameter.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">7</div><div class="q-title-wrap"><div class="q-title">Describe how error handling and retry mechanisms work in ADF.</div><div class="q-tags"><span class="q-tag tag-debug">Reliability</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-body">
+      <ul>
+        <li><strong>Activity retry:</strong> Each activity has configurable retry count (default 0) and retry interval. ADF re-runs the failed activity N times before marking it failed. Use for transient failures like network blips and throttling.</li>
+        <li><strong>On Failure path:</strong> Each activity has Success, Failure, and Completion output paths. Connect activities on the Failure path to trigger cleanup, send alerts (Web Activity to Teams webhook), or log errors to a SQL table.</li>
+        <li><strong>Timeout:</strong> Set timeouts on long-running activities to prevent hanging pipelines from consuming resources indefinitely.</li>
+        <li><strong>Fault tolerance in Copy Activity:</strong> Skip incompatible rows and log them to a fault file in ADLS instead of failing the entire copy. Configure under Copy Activity → Settings → Fault tolerance.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">8</div><div class="q-title-wrap"><div class="q-title">How would you securely migrate on-premises SQL Server data into ADLS Gen2?</div><div class="q-tags"><span class="q-tag tag-sec">Security</span><span class="q-tag tag-arch">Migration</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-body">
+      <ol>
+        <li>Install <strong>SHIR</strong> on a machine in the on-prem network that can reach the SQL Server.</li>
+        <li>Create a <strong>Linked Service</strong> in ADF pointing to on-prem SQL Server via the SHIR. Store the password in <strong>Azure Key Vault</strong> — never hardcode credentials.</li>
+        <li>Use <strong>Managed Identity</strong> for ADF to authenticate to ADLS Gen2 — no storage account keys needed.</li>
+        <li>Configure a <strong>Copy Activity</strong> with the on-prem SQL linked service as source and ADLS Gen2 as sink. Use Parquet format for storage efficiency.</li>
+        <li>Ensure <strong>encryption in transit:</strong> SQL Server uses TLS, ADLS uses HTTPS, SHIR to ADF cloud uses TLS over port 443.</li>
+        <li>Implement <strong>incremental load</strong> using watermarks or SQL Server Change Tracking to avoid moving the full dataset on every run.</li>
+        <li>For high-security requirements, use <strong>ExpressRoute or VPN</strong> for private connectivity instead of public internet traversal.</li>
+      </ol>
+    </div>
+  </div>
+
+
+
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">9</div><div class="q-title-wrap"><div class="q-title">How do you handle schema drift in ADF?</div><div class="q-tags"><span class="q-tag tag-debug">Schema Drift</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p>Schema drift happens when source systems add, remove, or rename columns without telling you. In ADF, you handle it at two levels:</p>
       <p><strong>In Mapping Data Flow (the right place to handle drift):</strong></p>
@@ -1105,7 +1155,7 @@
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">9</div><div class="q-title-wrap"><div class="q-title">How do you manage Linked Services and Datasets in ADF at scale?</div><div class="q-tags"><span class="q-tag tag-pattern">Best Practice</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">10</div><div class="q-title-wrap"><div class="q-title">How do you manage Linked Services and Datasets in ADF at scale?</div><div class="q-tags"><span class="q-tag tag-pattern">Best Practice</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <ul>
         <li><strong>Parameterize everything:</strong> A single linked service per technology (one for Azure SQL, one for ADLS), parameterized with server, database, and container name. Datasets also parameterized with table name, file path, schema. This means one linked service handles 100 tables, not 100 linked services.</li>
@@ -1119,7 +1169,7 @@
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">10</div><div class="q-title-wrap"><div class="q-title">How do you deploy ADF across environments (Dev → Test → Prod)?</div><div class="q-tags"><span class="q-tag tag-arch">CI/CD</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">11</div><div class="q-title-wrap"><div class="q-title">How do you deploy ADF across environments (Dev → Test → Prod)?</div><div class="q-tags"><span class="q-tag tag-arch">CI/CD</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <ol>
         <li><strong>Connect ADF to Git (Azure DevOps or GitHub):</strong> All changes made in ADF Studio are committed to a feature branch. Dev ADF is the only one connected to Git.</li>
@@ -1144,7 +1194,121 @@
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">1</div><div class="q-title-wrap"><div class="q-title">When would you choose Hash distribution over Round-Robin or Replicated tables in a Synapse Dedicated Pool?</div><div class="q-tags"><span class="q-tag tag-perf">Distribution</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">1</div><div class="q-title-wrap"><div class="q-title">Why Synapse? What problems does it solve?</div><div class="q-tags"><span class="q-tag tag-arch">Architecture</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-body">
+      <p>Earlier organizations used SQL Data Warehouse, Azure Data Factory, HDInsight, Spark Clusters as separate services.</p>
+      <p>Synapse unified them into a Single Platform, reducing Data movement, Infrastructure management &amp; Development Complexity.</p>
+      <p><strong>Performance Optimization in Synapse:</strong></p>
+      <ul>
+        <li>Use Hash distribution</li>
+        <li>Reduce data movement</li>
+        <li>Use Partitioning</li>
+        <li>Use Parquet files</li>
+        <li>Avoid Select *</li>
+        <li>Use Replicated tables for dimensions</li>
+        <li>Use CTAS</li>
+      </ul>
+      <p><strong>Security in Synapse:</strong></p>
+      <ul>
+        <li>Azure RBAC → Managed Identity</li>
+        <li>Azure Key Vault → Private End Points</li>
+        <li>Row-level Security → Column level Security</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">2</div><div class="q-title-wrap"><div class="q-title">What is Azure Synapse Analytics?</div><div class="q-tags"><span class="q-tag tag-fund">Overview</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-body">
+      <p>It is a unified analytics platform that combines data warehousing, big data analytics &amp; SQL querying over Data Lake.</p>
+      <p>It supports: SQL Analytics, Lakehouse querying, data warehousing, Power BI serving layer, ELT Pipeline.</p>
+      <p>Think of it as SQL engine for analytics at scale.</p>
+      <p><strong>Components inside Synapse Workspace:</strong></p>
+      <ul>
+        <li><strong>SQL Pools</strong> → Query engine</li>
+        <li><strong>Spark Pools</strong> → Big data Processing</li>
+        <li><strong>Pipelines</strong> → Orchestration</li>
+        <li><strong>Studio UI</strong> → development interface</li>
+        <li><strong>Integration</strong> → Power BI Connection</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">3</div><div class="q-title-wrap"><div class="q-title">types of SQL Pools & Open Rowset & External Tables</div><div class="q-tags"><span class="q-tag tag-arch">SQL Pools</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-body">
+      <p><strong>1. Dedicated SQL Pool</strong> — it uses MPP architecture (massively parallel processing).</p>
+      <ul>
+        <li>Here users pre-allocate compute resources using Data Warehousing Units (DWUs)</li>
+        <li>Requires manual scaling (up/down) and can be paused to stop billing for compute while retaining data</li>
+        <li>Best for star schema model, fact tables, large aggregations</li>
+      </ul>
+      <p><strong>2. Serverless SQL Pool</strong> (Lakehouse query engine)</p>
+      <ul>
+        <li>It is an on-demand pool that automatically scales compute resources without user intervention, allowing queries directly against data lake files in ADLS</li>
+        <li>It uses Distributed Query Processing (DQP) engine that breaks queries into tasks executed on backend nodes, scaling automatically based on workload</li>
+        <li>Best for querying Parquet in ADLS, exploratory analytics, lakehouse queries &amp; ad-hoc SQL analysis</li>
+      </ul>
+      <p><strong>OPENROWSET</strong> — it's a Temporary SQL method to query files directly from Data Lake without creating metadata objects. Used for ad-hoc queries, schema inspection, quick file exploration, one-time analysis.</p>
+      <p><strong>External Table</strong> — it's a re-usable table definition referencing data lake files inside Serverless SQL Pool. Used for repeated queries, shared datasets, reporting layers, BI integration, prod analytics.</p>
+    </div>
+  </div>
+
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">4</div><div class="q-title-wrap"><div class="q-title">Distribution Strategies</div><div class="q-tags"><span class="q-tag tag-perf">Distribution</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-body">
+      <p>It is a technique used to spread table rows across compute nodes for parallel processing. There are 3 types in Dedicated SQL Pool:</p>
+      <ul>
+        <li><strong>Hash Distribution:</strong> Rows with same column go to same node.<br>Ex: <code>CREATE TABLE fact_sales WITH (Distribution = Hash(Cust_id))</code><br>Used for — large fact tables, star schema fact tables, frequent joins on specific column.</li>
+        <li><strong>Round Robin:</strong> Rows distributed randomly across nodes.<br>Ex: <code>(Distribution = ROUND_ROBIN)</code><br>Used when — Temp staging tables, initial ingestion tables, no clear join column exists. Fast to load, slower for joins.</li>
+        <li><strong>Replicate Distribution:</strong> Entire table copied to every compute node.<br>Ex: <code>(Distribution = REPLICATE)</code><br>Used when — table is small, frequently joined, dimension lookup table (5000 dims &amp; 5b facts). Speeds up joins dramatically.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">5</div><div class="q-title-wrap"><div class="q-title">Synapse Storage Table Types</div><div class="q-tags"><span class="q-tag tag-arch">Storage</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-body">
+      <p><strong>1. Heap Table:</strong> It is a table without any index, where data is stored unsorted &amp; written directly as inserted.<br>
+      Ex: <code>CREATE TABLE Staging_Sales (Sale_id INT, amount FLOAT) WITH (HEAP)</code></p>
+      <ul>
+        <li>Rows are inserted directly into storage without index maintenance &amp; without ordering — results in very fast data ingestion</li>
+        <li>Recommended for: Staging tables, temp datasets, intermediate ELT layers, frequent batch loads, ADF ingestion targets</li>
+        <li>Advantages: Fastest insert speed, minimal storage overhead, simple structure, ideal for temporary usage</li>
+      </ul>
+      <p><strong>2. Clustered Columnstore Index (CCI):</strong> It stores table data col-by-col instead of row-by-row, optimized for large scale analytics.<br>
+      Ex: <code>CREATE TABLE FACT_Sales (customer_id INT, Sale_date Date, revenue FLOAT) WITH (CLUSTERED COLUMNSTORE INDEX)</code></p>
+      <ul>
+        <li>Recommended for: Fact tables, large datasets, agg workloads, star schema WH tables</li>
+        <li>Advantages: high compression ratio, faster aggregations, reduced storage use, parallel scan performance, MPP optimization</li>
+      </ul>
+      <p><strong>3. Clustered Index Table:</strong> It stores rows sorted based on a key column, improving lookup performance.<br>
+      Ex: <code>CREATE TABLE dim_customers (customer_id INT, Cust_name VARCHAR(100)) WITH (CLUSTERED INDEX(customer_id))</code></p>
+      <ul>
+        <li>Sorted order improves lookup speed, join speed &amp; filter performance</li>
+        <li>Recommended for: Dim tables, lookup tables, small-medium datasets, reference datasets</li>
+        <li>Advantages: Fast point lookups, efficient joins, sorted storage structure, better filtering performance</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">6</div><div class="q-title-wrap"><div class="q-title">What is PolyBase? How does it compare to COPY INTO?</div><div class="q-tags"><span class="q-tag tag-pattern">Data Loading</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-body">
+      <p><strong>PolyBase:</strong> It is a technology that enables Azure Synapse &amp; SQL Server to efficiently query &amp; load data from external server to efficiently query &amp; load data from external storage systems using SQL, making large-scale data ingestion faster &amp; more scalable.</p>
+      <ul>
+        <li>It requires creating External Data Source, fileformat &amp; External Table as separate objects before loading. It is an older approach.</li>
+      </ul>
+      <p><strong>COPY INTO:</strong> Is a modern &amp; preferred approach. A single T-SQL statement handles everything. Supports more file formats, more authentication methods &amp; handles bad rows.</p>
+      <pre><code class="language-sql">COPY INTO dbo.orders FROM 'abfss://mystacc...../orders/*.parquet'
+WITH (FILE_TYPE = 'PARQUET', CREDENTIAL = ('Managed Identity'));</code></pre>
+    </div>
+  </div>
+
+  
+
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">7</div><div class="q-title-wrap"><div class="q-title">When would you choose Hash distribution over Round-Robin or Replicated tables in a Synapse Dedicated Pool?</div><div class="q-tags"><span class="q-tag tag-perf">Distribution</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p>Synapse Dedicated Pool distributes data across <strong>60 distributions</strong> (physical storage units). How data lands across those distributions determines query performance.</p>
       <ul>
@@ -1157,7 +1321,7 @@
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">2</div><div class="q-title-wrap"><div class="q-title">What is the Hierarchical Namespace (HNS) in ADLS Gen2 and how does it optimize big data operations?</div><div class="q-tags"><span class="q-tag tag-fund">Fundamentals</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">8</div><div class="q-title-wrap"><div class="q-title">What is the Hierarchical Namespace (HNS) in ADLS Gen2 and how does it optimize big data operations?</div><div class="q-tags"><span class="q-tag tag-fund">Fundamentals</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p>Regular Azure Blob Storage is a flat namespace — "folders" are just prefixes in blob names. Operations like renaming or deleting a "folder" require enumerating and updating every blob with that prefix — O(n) operations at scale.</p>
       <p>ADLS Gen2 with HNS enabled creates a <strong>true hierarchical file system</strong> like HDFS. Directories are first-class objects with their own metadata. This enables:</p>
@@ -1172,7 +1336,7 @@
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">3</div><div class="q-title-wrap"><div class="q-title">Explain Synapse Serverless SQL Pools versus Dedicated SQL Pools — when do you use each?</div><div class="q-tags"><span class="q-tag tag-arch">Architecture</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">9</div><div class="q-title-wrap"><div class="q-title">Explain Synapse Serverless SQL Pools versus Dedicated SQL Pools — when do you use each?</div><div class="q-tags"><span class="q-tag tag-arch">Architecture</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p><strong>Serverless SQL Pool:</strong> No provisioned compute. Query files directly in ADLS (Parquet, CSV, JSON, Delta) using T-SQL with <code>OPENROWSET</code> or external tables. Pay per TB scanned. Great for ad-hoc exploration, data discovery, and building views for Power BI on top of the data lake. Limitation: no indexes or materialized aggregates — every query scans files.</p>
       <p><strong>Dedicated SQL Pool:</strong> You provision DWUs — dedicated compute and columnar storage (CCI). Supports indexes, statistics, materialized views, and workload management. Pay per DWU-hour. Best for repeated, complex BI queries with multi-user concurrency and SLA requirements.</p>
@@ -1181,19 +1345,7 @@
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">4</div><div class="q-title-wrap"><div class="q-title">What is the difference between PolyBase and COPY INTO in Synapse?</div><div class="q-tags"><span class="q-tag tag-pattern">Data Loading</span></div></div><div class="q-chevron">▼</div></div>
-    <div class="q-body">
-      <p>Both load data from ADLS into a Dedicated Pool table, but they differ significantly:</p>
-      <p><strong>PolyBase</strong> is the older approach. Requires creating an External Data Source, External File Format, and External Table as separate objects before loading. More verbose setup, supports fewer authentication methods. Still functional but is the legacy path.</p>
-      <p><strong>COPY INTO</strong> is the modern, preferred approach. A single T-SQL statement handles everything. Supports more file formats (CSV, Parquet, ORC), more authentication methods (SAS, Managed Identity, Service Principal), and handles bad rows gracefully with an <code>ERRORFILE</code> option.</p>
-      <pre><code class="language-sql">COPY INTO dbo.orders
-FROM 'https://mystorageacct.dfs.core.windows.net/container/orders/*.parquet'
-WITH (FILE_TYPE = 'PARQUET', CREDENTIAL = (IDENTITY = 'Managed Identity'));</code></pre>
-    </div>
-  </div>
-
-  <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">5</div><div class="q-title-wrap"><div class="q-title">What is workload management in Synapse and why is it important?</div><div class="q-tags"><span class="q-tag tag-perf">Performance</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">10</div><div class="q-title-wrap"><div class="q-title">What is workload management in Synapse and why is it important?</div><div class="q-tags"><span class="q-tag tag-perf">Performance</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p>Without workload management, a single heavy query can starve all other users of DWU resources. Synapse workload management has three components:</p>
       <ul>
@@ -1205,7 +1357,7 @@ WITH (FILE_TYPE = 'PARQUET', CREDENTIAL = (IDENTITY = 'Managed Identity'));</cod
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">6</div><div class="q-title-wrap"><div class="q-title">How do you secure data in Azure Synapse Analytics?</div><div class="q-tags"><span class="q-tag tag-sec">Security</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">11</div><div class="q-title-wrap"><div class="q-title">How do you secure data in Azure Synapse Analytics?</div><div class="q-tags"><span class="q-tag tag-sec">Security</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <ul>
         <li><strong>Network:</strong> Deploy Synapse in a managed VNet. Use Private Endpoints to block public internet exposure. Apply Synapse Firewall rules to whitelist trusted IP ranges.</li>
@@ -1396,8 +1548,75 @@ df = spark.read.schema(schema).json("path/to/data")</code></pre>
     <div><div class="sec-title">PySpark</div><div class="sec-desc">Skew, UDFs, partitioning, memory, AQE, streaming, nested JSON</div></div>
   </div>
 
+    <div class="q-card">
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">1</div><div class="q-title-wrap"><div class="q-title">Spark Architecture — Driver, Executors, Cluster Manager, DAG</div><div class="q-tags"><span class="q-tag tag-fund">Architecture</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-body">
+      <p><strong>Core components:</strong></p>
+      <ul>
+        <li><strong>Driver:</strong> The JVM process that runs your Spark application's <code>main()</code>. It creates the SparkContext, builds the DAG (Directed Acyclic Graph) of transformations, divides the DAG into stages and tasks, and schedules tasks on executors. The driver has a finite memory — never <code>collect()</code> large data to it.</li>
+        <li><strong>Executor:</strong> Worker JVM processes that run tasks. Each executor has a fixed number of CPU cores (tasks run in parallel = cores) and memory (execution + storage). Executors live for the lifetime of the application.</li>
+        <li><strong>Cluster Manager:</strong> Allocates resources (executors) to the Spark application. In Databricks: YARN (legacy) or Kubernetes. In standalone: Spark's built-in manager. The driver requests resources from the cluster manager.</li>
+        <li><strong>DAG (Directed Acyclic Graph):</strong> Spark builds a logical plan of transformations lazily. When an action (<code>count()</code>, <code>write()</code>, <code>collect()</code>) is triggered, the Catalyst optimizer converts the logical plan into a physical plan, splits it into stages at shuffle boundaries, and each stage into tasks (one task per partition).</li>
+        <li><strong>RDD → DataFrame → Dataset:</strong> RDDs are the low-level distributed data structure. DataFrames are RDDs with schema — the Catalyst optimizer can reason about them. Always use DataFrames/SQL in production, not raw RDDs.</li>
+        <li><strong>Lazy evaluation:</strong> Transformations (<code>filter()</code>, <code>join()</code>, <code>select()</code>) don't execute immediately. They build the DAG. Only actions trigger actual computation. This allows Catalyst to optimize the full plan before executing anything.</li>
+      </ul>
+    </div>
+  </div>
+
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">1</div><div class="q-title-wrap"><div class="q-title">How do you handle Data Skewness in a PySpark cluster? Explain Salting.</div><div class="q-tags"><span class="q-tag tag-perf">Performance</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">2</div><div class="q-title-wrap"><div class="q-title">Catalyst Optimizer & Tungsten Engine</div><div class="q-tags"><span class="q-tag tag-perf">Internals</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-body">
+      <p><strong>Catalyst Optimizer</strong> is Spark's intelligent query optimizer that automatically rewrites the pyspark code into the fastest possible execution plan. It decides how to execute efficiently. It works in 4 phases:</p>
+      <ol>
+        <li><strong>Analysis:</strong> In this stage, the Catalyst Optimizer analyzes the logical plan to resolve references to named expressions, like resolving column names or table names. Catches "column not found" errors here.</li>
+        <li><strong>Logical Optimization:</strong> The optimizer applies rule-based optimizations to the logical plan, such as — predicate pushdown (move filters as early as possible), projection pruning (drop unused columns early), constant folding (<code>1+1</code> → <code>2</code>), subquery elimination.</li>
+        <li><strong>Physical Planning:</strong>  The optimizer generates several physical plans from the logical plan and chooses the most efficient one based on cost estimation. — chooses join strategy (broadcast vs sort-merge vs hash), decides partition count, selects sort algorithms.</li>
+        <li><strong>Code Generation:</strong> Generates optimized JVM bytecode for each physical operator — eliminates virtual function calls, enables CPU-level optimizations.</li>
+      </ol>
+      <div class="callout info"><span class="callout-icon">⚡</span><div>
+        Catalyst Optimizer is Spark's SQL query optimization engine that transforms logical query plans into efficient physical execution plans using rule based & cost-based optimization techniques.</div></div>
+
+      <p><strong>Tungsten Engine</strong> is Spark's memory and CPU optimization layer, operating below Catalyst:</p>
+      <ul>
+        <li><strong>Off-heap memory management:</strong> Bypasses JVM garbage collection by managing memory directly. Reduces GC pauses dramatically.</li>
+        <li><strong>Cache-aware computation:</strong> Designs algorithms (sort, hash) to maximize CPU L1/L2 cache usage — orders of magnitude faster than cache-miss-heavy algorithms.</li>
+        <li><strong>Whole-stage code generation:</strong> Instead of one function per operator (many virtual calls), generates a single optimized loop for the entire pipeline. Dramatically reduces CPU overhead.</li>
+        <li><strong>Binary row format:</strong> Stores data in compact binary format in memory — smaller footprint, faster serialization than Java objects.</li>
+      </ul>
+      <div class="callout tip"><span class="callout-icon">&#x1F4A1;</span><div>Catalyst makes your SQL/DataFrame code <strong>correct and logically optimal</strong>. Tungsten makes the physical execution <strong>fast at the CPU/memory level</strong>. Together they make Spark DataFrames much faster than raw RDDs.</div></div>
+    </div>
+  </div>
+
+   <div class="q-card">
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">3</div><div class="q-title-wrap"><div class="q-title">cache() vs persist()?</div><div class="q-tags"><span class="q-tag tag-perf">Memory</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-body">
+      <p><code>cache()</code> is shorthand for <code>persist(StorageLevel.MEMORY_AND_DISK)</code>. It tries to store the DataFrame in memory and spills to disk if memory is insufficient.</p>
+      <p><code>persist()</code> is the full API — choose the storage level explicitly:</p>
+      <ul>
+        <li><strong>MEMORY_ONLY:</strong> Fastest. If it doesn't fit, partitions are dropped and recomputed on access — no disk fallback.</li>
+        <li><strong>MEMORY_AND_DISK:</strong> Default of <code>cache()</code>. Spills excess partitions to disk instead of recomputing. Safe for most use cases.</li>
+        <li><strong>DISK_ONLY:</strong> Never uses memory. Use when the DataFrame is too large to fit in memory AND you want to avoid OOM errors. Slower but prevents crashes for extremely large intermediate results.</li>
+        <li><strong>MEMORY_AND_DISK_SER:</strong> Serializes objects (smaller footprint) at cost of CPU for ser/deser.</li>
+      </ul>
+      <div class="callout warn"><span class="callout-icon">&#x26A0;&#xFE0F;</span><div>Always call <code>unpersist()</code> when done to free resources. Never cache a DataFrame used only once — it's pointless overhead.</div></div>
+    </div>
+  </div>
+
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">4</div><div class="q-title-wrap"><div class="q-title">Adaptive Query Execution (AQE)</div><div class="q-tags"><span class="q-tag tag-perf">Optimization</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-body">
+      <p>Traditional Spark optimization happens at query parse time based on statistics that may be stale or missing. AQE (Spark 3.0+) re-optimizes the query plan <strong>at runtime</strong> using actual shuffle statistics.</p>
+      <ul>
+        <li><strong>Dynamic coalescing of shuffle partitions:</strong> If data is small, AQE merges small partitions → fewer tasks, less overhead.</li>
+        <li><strong>Dynamic switch to broadcast join:</strong> If at runtime one side turns out small enough to broadcast, AQE switches from sort-merge to broadcast hash join mid-query.</li>
+        <li><strong>Dynamic skew join handling:</strong> AQE detects skewed partitions (5x larger than median) and splits them into parallel sub-tasks.</li>
+      </ul>
+      <p>Enable: <code>spark.conf.set("spark.sql.adaptive.enabled", "true")</code>. In Databricks, AQE is enabled by default from DBR 7.3+.</p>
+    </div>
+  </div>
+
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">5</div><div class="q-title-wrap"><div class="q-title">Data Skewness in a PySpark cluster</div><div class="q-tags"><span class="q-tag tag-perf">Performance</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p>Data skew occurs when data is not evenly distributed across partitions. One partition may have 10 million rows while others have 10,000 — that one task takes 100x longer and becomes the bottleneck of the entire stage.</p>
       <ul>
@@ -1409,8 +1628,10 @@ df = spark.read.schema(schema).json("path/to/data")</code></pre>
     </div>
   </div>
 
+  
+
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">2</div><div class="q-title-wrap"><div class="q-title">Explain the difference between Vectorized UDF (pandas_udf) and standard UDF. Which is more efficient?</div><div class="q-tags"><span class="q-tag tag-perf">Performance</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">6</div><div class="q-title-wrap"><div class="q-title">Explain the difference between Vectorized UDF (pandas_udf) and standard UDF. Which is more efficient?</div><div class="q-tags"><span class="q-tag tag-perf">Performance</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p><strong>Standard UDF:</strong> A Python function registered to run row-by-row. Spark cannot optimize it — it's a black box. Each row is serialized from JVM → Python process → processed → serialized back. This overhead is enormous, and UDFs disable Catalyst optimizations like predicate pushdown.</p>
       <p><strong>Vectorized UDF (pandas_udf):</strong> Data is batched into Pandas Series using Apache Arrow for zero-copy serialization. Much faster — typically 3-10x compared to row-at-a-time UDFs.</p>
@@ -1427,7 +1648,7 @@ df.withColumn("result", multiply_by_two(col("amount")))</code></pre>
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">3</div><div class="q-title-wrap"><div class="q-title">Explain partitioning and bucketing in Apache Spark and when to use each.</div><div class="q-tags"><span class="q-tag tag-arch">Storage</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">7</div><div class="q-title-wrap"><div class="q-title">Explain partitioning and bucketing in Apache Spark and when to use each.</div><div class="q-tags"><span class="q-tag tag-arch">Storage</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p><strong>Partitioning</strong> splits data into directories based on column values — e.g., <code>partitionBy("year", "month")</code> creates <code>year=2024/month=01/</code> folders. Queries filtering on the partition column skip entire directories (partition pruning). Best for low-cardinality columns like date, region, or status. High-cardinality columns (user_id) → millions of tiny files (small files problem).</p>
       <p><strong>Bucketing</strong> hashes data into a fixed number of files (buckets) based on a column. Files are in one directory; the structure is internal metadata. Key benefit: when two tables are bucketed on the same column with the same bucket count, Spark can join them without any shuffle.</p>
@@ -1437,23 +1658,10 @@ df.withColumn("result", multiply_by_two(col("amount")))</code></pre>
     </div>
   </div>
 
-  <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">4</div><div class="q-title-wrap"><div class="q-title">What is the difference between cache() and persist()? When should you use DISK_ONLY?</div><div class="q-tags"><span class="q-tag tag-perf">Memory</span></div></div><div class="q-chevron">▼</div></div>
-    <div class="q-body">
-      <p><code>cache()</code> is shorthand for <code>persist(StorageLevel.MEMORY_AND_DISK)</code>. It tries to store the DataFrame in memory and spills to disk if memory is insufficient.</p>
-      <p><code>persist()</code> is the full API — choose the storage level explicitly:</p>
-      <ul>
-        <li><strong>MEMORY_ONLY:</strong> Fastest. If it doesn't fit, partitions are dropped and recomputed on access — no disk fallback.</li>
-        <li><strong>MEMORY_AND_DISK:</strong> Default of <code>cache()</code>. Spills excess partitions to disk instead of recomputing. Safe for most use cases.</li>
-        <li><strong>DISK_ONLY:</strong> Never uses memory. Use when the DataFrame is too large to fit in memory AND you want to avoid OOM errors. Slower but prevents crashes for extremely large intermediate results.</li>
-        <li><strong>MEMORY_AND_DISK_SER:</strong> Serializes objects (smaller footprint) at cost of CPU for ser/deser.</li>
-      </ul>
-      <div class="callout warn"><span class="callout-icon">&#x26A0;&#xFE0F;</span><div>Always call <code>unpersist()</code> when done to free resources. Never cache a DataFrame used only once — it's pointless overhead.</div></div>
-    </div>
-  </div>
+ 
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">5</div><div class="q-title-wrap"><div class="q-title">Explain Broadcast Hash Joins. What is the default threshold size in Spark?</div><div class="q-tags"><span class="q-tag tag-perf">Optimization</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">8</div><div class="q-title-wrap"><div class="q-title">Explain Broadcast Hash Joins. What is the default threshold size in Spark?</div><div class="q-tags"><span class="q-tag tag-perf">Optimization</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p>In a regular join, Spark must shuffle both tables across the network so matching keys land on the same executor. In a <strong>Broadcast Hash Join</strong>, the smaller table is fully copied ("broadcast") to every executor — no shuffle needed.</p>
       <p><strong>Default auto-broadcast threshold: 10MB</strong> (<code>spark.sql.autoBroadcastJoinThreshold = 10485760</code>). If the smaller table is under 10MB, Spark automatically broadcasts it.</p>
@@ -1463,21 +1671,9 @@ df_large.join(broadcast(df_small), "key")</code></pre>
     </div>
   </div>
 
+  
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">6</div><div class="q-title-wrap"><div class="q-title">What is Adaptive Query Execution (AQE)? How does it help at runtime?</div><div class="q-tags"><span class="q-tag tag-perf">Optimization</span></div></div><div class="q-chevron">▼</div></div>
-    <div class="q-body">
-      <p>Traditional Spark optimization happens at query parse time based on statistics that may be stale or missing. AQE (Spark 3.0+) re-optimizes the query plan <strong>at runtime</strong> using actual shuffle statistics.</p>
-      <ul>
-        <li><strong>Dynamic coalescing of shuffle partitions:</strong> If data is small, AQE merges small partitions → fewer tasks, less overhead.</li>
-        <li><strong>Dynamic switch to broadcast join:</strong> If at runtime one side turns out small enough to broadcast, AQE switches from sort-merge to broadcast hash join mid-query.</li>
-        <li><strong>Dynamic skew join handling:</strong> AQE detects skewed partitions (5x larger than median) and splits them into parallel sub-tasks.</li>
-      </ul>
-      <p>Enable: <code>spark.conf.set("spark.sql.adaptive.enabled", "true")</code>. In Databricks, AQE is enabled by default from DBR 7.3+.</p>
-    </div>
-  </div>
-
-  <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">7</div><div class="q-title-wrap"><div class="q-title">What is Spark Spill? How do you identify it in the Spark UI and resolve it?</div><div class="q-tags"><span class="q-tag tag-debug">Performance</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">9</div><div class="q-title-wrap"><div class="q-title">What is Spark Spill? How do you identify it in the Spark UI and resolve it?</div><div class="q-tags"><span class="q-tag tag-debug">Performance</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p>Spill occurs when a Spark task's in-memory data exceeds available executor memory. Spark writes excess to disk and reads it back when needed — disk I/O is 100-1000x slower than RAM.</p>
       <p><strong>Identify:</strong> Spark UI → Stages tab → look for non-zero <em>Shuffle Spill (Memory)</em> and <em>Shuffle Spill (Disk)</em> columns. Also check Stage detail → Task metrics for high "Disk bytes spilled".</p>
@@ -1491,7 +1687,7 @@ df_large.join(broadcast(df_small), "key")</code></pre>
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">8</div><div class="q-title-wrap"><div class="q-title">How do you handle the Small File Problem in a Data Lake? Coalesce vs. repartition?</div><div class="q-tags"><span class="q-tag tag-perf">Performance</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">10</div><div class="q-title-wrap"><div class="q-title">How do you handle the Small File Problem in a Data Lake? Coalesce vs. repartition?</div><div class="q-tags"><span class="q-tag tag-perf">Performance</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p>Thousands of tiny files require a metadata call per file and Spark creates one task per file — 10,000 files = 10,000 tasks = scheduler and storage service overwhelm.</p>
       <ul>
@@ -1504,21 +1700,10 @@ df.repartition(10).write.parquet("output/")   # expensive, perfectly even</code>
     </div>
   </div>
 
-  <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">9</div><div class="q-title-wrap"><div class="q-title">When should Checkpointing be used in Spark? What happens if the checkpoint directory is deleted in Structured Streaming?</div><div class="q-tags"><span class="q-tag tag-pattern">Streaming</span></div></div><div class="q-chevron">▼</div></div>
-    <div class="q-body">
-      <p><strong>Batch checkpointing:</strong> For very long lineage chains (&gt;~20 chained transformations), <code>rdd.checkpoint()</code> materializes the RDD to ADLS/HDFS, breaking the lineage so recomputations start from the checkpoint.</p>
-      <p><strong>Structured Streaming checkpointing:</strong> The checkpoint directory stores the streaming state — offset tracking (which Kafka messages have been processed), aggregation state (running totals, windowed counts), and query progress metadata. It is how exactly-once processing is guaranteed.</p>
-      <div class="callout warn"><span class="callout-icon">&#x1F6A8;</span><div><strong>If the checkpoint directory is deleted:</strong> The streaming query loses all state. On restart it begins fresh — it may re-read old data, aggregations reset to zero, and exactly-once guarantees are broken. For stateful aggregations this constitutes data loss. <strong>Never delete the checkpoint directory of a running or paused streaming query.</strong></div></div>
-      <pre><code class="language-python">df.writeStream \
-  .format("delta") \
-  .option("checkpointLocation", "/mnt/checkpoints/mystream") \
-  .start("/mnt/delta/output")</code></pre>
-    </div>
-  </div>
+  
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">10</div><div class="q-title-wrap"><div class="q-title">Write PySpark code to process and flatten nested JSON data.</div><div class="q-tags"><span class="q-tag tag-code">Code</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">11</div><div class="q-title-wrap"><div class="q-title">Write PySpark code to process and flatten nested JSON data.</div><div class="q-tags"><span class="q-tag tag-code">Code</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p>Key functions: <code>explode()</code> for arrays (drops null rows), <code>explode_outer()</code> keeps null rows, <code>col("struct.field")</code> accesses nested struct fields.</p>
       <pre><code class="language-python">from pyspark.sql.functions import col, explode_outer
@@ -1552,83 +1737,11 @@ df_flat = df_items.select(
 df_flat.show()</code></pre>
     </div>
   </div>
-  <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">11</div><div class="q-title-wrap"><div class="q-title">Explain Spark Architecture — Driver, Executors, Cluster Manager, DAG</div><div class="q-tags"><span class="q-tag tag-fund">Architecture</span></div></div><div class="q-chevron">▼</div></div>
-    <div class="q-body">
-      <p><strong>Core components:</strong></p>
-      <ul>
-        <li><strong>Driver:</strong> The JVM process that runs your Spark application's <code>main()</code>. It creates the SparkContext, builds the DAG (Directed Acyclic Graph) of transformations, divides the DAG into stages and tasks, and schedules tasks on executors. The driver has a finite memory — never <code>collect()</code> large data to it.</li>
-        <li><strong>Executor:</strong> Worker JVM processes that run tasks. Each executor has a fixed number of CPU cores (tasks run in parallel = cores) and memory (execution + storage). Executors live for the lifetime of the application.</li>
-        <li><strong>Cluster Manager:</strong> Allocates resources (executors) to the Spark application. In Databricks: YARN (legacy) or Kubernetes. In standalone: Spark's built-in manager. The driver requests resources from the cluster manager.</li>
-        <li><strong>DAG (Directed Acyclic Graph):</strong> Spark builds a logical plan of transformations lazily. When an action (<code>count()</code>, <code>write()</code>, <code>collect()</code>) is triggered, the Catalyst optimizer converts the logical plan into a physical plan, splits it into stages at shuffle boundaries, and each stage into tasks (one task per partition).</li>
-        <li><strong>RDD → DataFrame → Dataset:</strong> RDDs are the low-level distributed data structure. DataFrames are RDDs with schema — the Catalyst optimizer can reason about them. Always use DataFrames/SQL in production, not raw RDDs.</li>
-        <li><strong>Lazy evaluation:</strong> Transformations (<code>filter()</code>, <code>join()</code>, <code>select()</code>) don't execute immediately. They build the DAG. Only actions trigger actual computation. This allows Catalyst to optimize the full plan before executing anything.</li>
-      </ul>
-    </div>
-  </div>
+
+
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">12</div><div class="q-title-wrap"><div class="q-title">Catalyst Optimizer & Tungsten Engine — what do they do?</div><div class="q-tags"><span class="q-tag tag-perf">Internals</span></div></div><div class="q-chevron">▼</div></div>
-    <div class="q-body">
-      <p><strong>Catalyst Optimizer</strong> is Spark SQL's query optimizer. It works in 4 phases:</p>
-      <ol>
-        <li><strong>Analysis:</strong> Resolves column names, table references, and data types against the catalog. Catches "column not found" errors here.</li>
-        <li><strong>Logical Optimization:</strong> Applies rule-based rewrites — predicate pushdown (move filters as early as possible), projection pruning (drop unused columns early), constant folding (<code>1+1</code> → <code>2</code>), subquery elimination.</li>
-        <li><strong>Physical Planning:</strong> Converts logical plan into physical plan — chooses join strategy (broadcast vs sort-merge vs hash), decides partition count, selects sort algorithms.</li>
-        <li><strong>Code Generation:</strong> Generates optimized JVM bytecode for each physical operator — eliminates virtual function calls, enables CPU-level optimizations.</li>
-      </ol>
-      <p><strong>Tungsten Engine</strong> is Spark's memory and CPU optimization layer, operating below Catalyst:</p>
-      <ul>
-        <li><strong>Off-heap memory management:</strong> Bypasses JVM garbage collection by managing memory directly. Reduces GC pauses dramatically.</li>
-        <li><strong>Cache-aware computation:</strong> Designs algorithms (sort, hash) to maximize CPU L1/L2 cache usage — orders of magnitude faster than cache-miss-heavy algorithms.</li>
-        <li><strong>Whole-stage code generation:</strong> Instead of one function per operator (many virtual calls), generates a single optimized loop for the entire pipeline. Dramatically reduces CPU overhead.</li>
-        <li><strong>Binary row format:</strong> Stores data in compact binary format in memory — smaller footprint, faster serialization than Java objects.</li>
-      </ul>
-      <div class="callout tip"><span class="callout-icon">&#x1F4A1;</span><div>Catalyst makes your SQL/DataFrame code <strong>correct and logically optimal</strong>. Tungsten makes the physical execution <strong>fast at the CPU/memory level</strong>. Together they make Spark DataFrames much faster than raw RDDs.</div></div>
-    </div>
-  </div>
-
-  <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">13</div><div class="q-title-wrap"><div class="q-title">Spark Join Strategies — Broadcast, Sort-Merge, Shuffle Hash, Nested Loop</div><div class="q-tags"><span class="q-tag tag-perf">Join Strategies</span></div></div><div class="q-chevron">▼</div></div>
-    <div class="q-body">
-      <ul>
-        <li><strong>Broadcast Hash Join (BHJ):</strong> Small table broadcast to all executors. Large table partitions join locally — no shuffle. Fastest join. Use when one side &lt; <code>spark.sql.autoBroadcastJoinThreshold</code> (default 10MB). Force with <code>broadcast(df)</code> hint.</li>
-        <li><strong>Sort-Merge Join (SMJ):</strong> Both sides shuffled by join key, then sorted, then merged. Default for large-large joins. Both sides must be sortable. Reliable but expensive (full shuffle of both sides).</li>
-        <li><strong>Shuffle Hash Join (SHJ):</strong> Both sides shuffled by join key. Smaller side hashed into a hash table. Larger side probes it. Faster than SMJ if one side fits in executor memory, but can OOM if the hash table is too large. Spark uses this when sortability is not available.</li>
-        <li><strong>Broadcast Nested Loop Join (BNLJ):</strong> Used for non-equi joins (joins without <code>=</code> condition — e.g., range joins, cross joins with filters). One side broadcast, the other loops through it for every row. Very slow for large tables — avoid if possible. Spark falls back to this when no other strategy works.</li>
-      </ul>
-      <p><strong>How Spark chooses:</strong> BHJ (if small enough) → SMJ (if sortable) → SHJ (if not sortable but fits in memory) → BNLJ (last resort). AQE can switch from SMJ to BHJ at runtime if statistics show one side is smaller than expected.</p>
-      <div class="callout warn"><span class="callout-icon">&#x26A0;&#xFE0F;</span><div>If you see "BroadcastNestedLoopJoin" in your explain plan, investigate immediately — it often means a missing join condition or an accidental cross join that will kill your job on large data.</div></div>
-    </div>
-  </div>
-
-  <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">14</div><div class="q-title-wrap"><div class="q-title">Distributed Variables in Spark — Broadcast Variables & Accumulators</div><div class="q-tags"><span class="q-tag tag-fund">Spark Internals</span></div></div><div class="q-chevron">▼</div></div>
-    <div class="q-body">
-      <p><strong>Broadcast Variables:</strong> Normally, any variable used inside a transformation is serialized and sent to each task (once per task, potentially thousands of copies). Broadcast Variables send the data once to each executor (not each task) and cache it in memory there. All tasks on that executor share one copy.</p>
-      <pre><code class="language-python">lookup_dict = {"NY": "New York", "CA": "California"}
-broadcast_dict = spark.sparkContext.broadcast(lookup_dict)
-
-# Inside transformation - all tasks on same executor share one copy
-df.rdd.map(lambda row: broadcast_dict.value.get(row["state"], "Unknown")).toDF()</code></pre>
-      <p>Use broadcast variables for large lookup dictionaries, config maps, or ML models that need to be available on every executor. For DataFrames, use the <code>broadcast()</code> function hint instead.</p>
-      <p><strong>Accumulators:</strong> Variables that tasks can only add to (write), and only the driver can read. Used to track counters across distributed tasks — e.g., count bad records, count rows processed per pipeline stage.</p>
-      <pre><code">bad_records = spark.sparkContext.accumulator(0)
-
-def process_row(row):
-    if row["amount"] is None:
-        bad_records.add(1)
-        return None
-    return row
-
-df.foreach(process_row)
-print(f"Bad records found: {bad_records.value}")</code></pre>
-      <div class="callout warn"><span class="callout-icon">&#x26A0;&#xFE0F;</span><div>Accumulators can be double-counted if a task is retried (Spark re-runs failed tasks). Use them for approximate monitoring metrics, not for business-critical counting. For exact counts, use DataFrame aggregations.</div></div>
-    </div>
-  </div>
-
-  <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">15</div><div class="q-title-wrap"><div class="q-title">How do you implement parallel processing in Python for ETL workloads? How do you structure a reusable Python ETL framework?</div><div class="q-tags"><span class="q-tag tag-arch">Python ETL</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">12</div><div class="q-title-wrap"><div class="q-title">How do you implement parallel processing in Python for ETL workloads? How do you structure a reusable Python ETL framework?</div><div class="q-tags"><span class="q-tag tag-arch">Python ETL</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p><strong>Parallel processing options in Python:</strong></p>
       <ul>
@@ -1665,8 +1778,9 @@ with ThreadPoolExecutor(max_workers=4) as executor:
     </div>
   </div>
 
+
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">16</div><div class="q-title-wrap"><div class="q-title">Partitioning strategies and how they impact performance</div><div class="q-tags"><span class="q-tag tag-perf">Partitioning</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">13</div><div class="q-title-wrap"><div class="q-title">Partitioning strategies and how they impact performance</div><div class="q-tags"><span class="q-tag tag-perf">Partitioning</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p><strong>Physical partitioning (on disk):</strong> Splitting data into directories based on column values — <code>partitionBy("year","month")</code>. Queries filtering on those columns skip irrelevant directories (partition pruning). Performance is excellent for the partition columns; no benefit for other columns.</p>
       <p><strong>Choosing partition columns:</strong> Low cardinality (date, region, status) — good. High cardinality (user_id, order_id) — bad (millions of tiny directories = small files problem, driver overwhelmed by metadata).</p>
@@ -1681,47 +1795,9 @@ with ThreadPoolExecutor(max_workers=4) as executor:
     </div>
   </div>
 
-  <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">17</div><div class="q-title-wrap"><div class="q-title">What is your approach to designing a fault-tolerant, scalable ETL/ELT pipeline in Azure? What tools and tradeoffs?</div><div class="q-tags"><span class="q-tag tag-arch">Architecture</span></div></div><div class="q-chevron">▼</div></div>
-    <div class="q-body">
-      <p><strong>Core design principles:</strong></p>
-      <ul>
-        <li><strong>Idempotency:</strong> Every pipeline run must be safe to re-run. Use watermarks, MERGE, or partition overwrite — never append-only without dedup.</li>
-        <li><strong>Modularity:</strong> Break pipelines into discrete stages (ingest, validate, transform, load). Each stage independently testable and restartable. Failure in Gold layer shouldn't require re-ingesting Bronze.</li>
-        <li><strong>Retry + dead-letter:</strong> Configure retry policies (3 attempts, exponential backoff) on every activity. Route bad records to a dead-letter path in ADLS, not pipeline failure.</li>
-        <li><strong>Checkpointing:</strong> For streaming — mandatory. For batch — use ADF pipeline activity dependencies to resume from last successful stage, not restart from scratch.</li>
-        <li><strong>Observability:</strong> Every pipeline writes audit logs (start/end time, row counts, status, error). Azure Monitor alerts on failure. Log Analytics for pattern analysis.</li>
-      </ul>
-      <p><strong>Tool choices and tradeoffs:</strong></p>
-      <ul>
-        <li><strong>ADF (orchestration):</strong> Managed, UI-driven, easy CI/CD. Tradeoff: limited complex logic — move that to Databricks notebooks.</li>
-        <li><strong>Databricks (transformation):</strong> Powerful, scalable Spark. Tradeoff: more expensive than ADF Data Flows; requires Spark expertise.</li>
-        <li><strong>Delta Lake (storage format):</strong> ACID, time travel, schema enforcement. Tradeoff: overhead vs raw Parquet for very simple pipelines.</li>
-        <li><strong>Synapse (serving):</strong> Excellent for BI workloads and multi-user concurrency. Tradeoff: DWU cost is always-on; Serverless SQL is cheaper for ad-hoc but slower for repeated queries.</li>
-      </ul>
-    </div>
-  </div>
+ 
 
-  <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">18</div><div class="q-title-wrap"><div class="q-title">You received duplicate records in streaming data — how do you handle deduplication?</div><div class="q-tags"><span class="q-tag tag-pattern">Streaming</span></div></div><div class="q-chevron">▼</div></div>
-    <div class="q-body">
-      <p>Streaming deduplication is harder than batch because you can't see the full dataset — you only see a window of data. Duplicates arrive due to: exactly-once delivery failures, network retries, producer restarts.</p>
-      <p><strong>Approaches:</strong></p>
-      <ul>
-        <li><strong>Structured Streaming built-in dedup:</strong> <code>df.withWatermark("event_time", "10 minutes").dropDuplicates(["event_id", "event_time"])</code> — Spark maintains a state store of seen event IDs within the watermark window. Events outside the watermark are assumed gone (trade-off: late events past watermark are dropped).</li>
-        <li><strong>Delta Lake MERGE on micro-batch:</strong> In foreachBatch, MERGE incoming data into Delta table on the unique key. Naturally idempotent — duplicate events update the same row instead of creating two.</li>
-        <li><strong>Redis/Cosmos DB state store:</strong> For longer dedup windows (days/weeks), check an external key-value store for event_id before processing. Write event_id to store after successful processing. Works across streaming restarts unlike Spark's in-memory state.</li>
-      </ul>
-      <pre><code class="language-python"># Structured Streaming dedup with watermark
-(spark.readStream.format("kafka")...
-  .withWatermark("event_time", "10 minutes")
-  .dropDuplicates(["event_id"])  # keeps first occurrence per window
-  .writeStream.format("delta")
-  .option("checkpointLocation", "/mnt/checkpoints/stream1")
-  .start("/mnt/delta/events")
-)</code></pre>
-    </div>
-  </div>
+ 
 </div><!-- /pyspark -->
 
 <!-- ════════════════════════════════════════════════════════
@@ -1817,8 +1893,26 @@ result = big.join(small, "key_s").drop("salt", "key_s")</code></pre>
     <div><div class="sec-title">SQL</div><div class="sec-desc">Query optimization, indexing, MERGE, duplicates, consecutive logins, masking</div></div>
   </div>
 
+   <div class="q-card">
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">1</div><div class="q-title-wrap"><div class="q-title">Indexes in SQL — types, internals, when to use / avoid</div><div class="q-tags"><span class="q-tag tag-perf">Indexes</span><span class="q-tag tag-fund">Core Concept</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-body">
+      <p>An index is a separate data structure (B-tree or other) that stores a sorted copy of one or more columns with pointers to original rows. It converts O(n) table scans into O(log n) lookups.</p>
+      <p><strong>Types:</strong></p>
+      <ul>
+        <li><strong>Clustered Index:</strong> Determines the physical order of rows in the table. One per table. Rows are stored in the B-tree leaf nodes. Range queries on the clustered key are extremely fast. SQL Server PKs are clustered by default.</li>
+        <li><strong>Non-Clustered Index:</strong> Separate structure with key + pointer (row locator) back to the table. Multiple allowed. Best for columns frequently in WHERE, JOIN ON, ORDER BY that aren't the PK.</li>
+        <li><strong>Covering Index (INCLUDE):</strong> A non-clustered index that includes extra columns (via INCLUDE clause) beyond the key. Query can be satisfied entirely from the index — no lookup to the main table ("index-covered query"). Fastest reads for specific query patterns.</li>
+        <li><strong>Composite Index:</strong> Index on multiple columns. Column order matters — the index can only be used for queries that filter on a left-prefix of the index columns. <code>INDEX(a, b, c)</code> can serve <code>WHERE a=?</code>, <code>WHERE a=? AND b=?</code>, but NOT <code>WHERE b=?</code>.</li>
+        <li><strong>Columnstore Index:</strong> Stores data column-by-column (vertically), highly compressed. Optimal for analytics — aggregating millions of rows on a few columns. Used by default in Synapse Dedicated Pool (CCI = Clustered Columnstore Index). Not suited for row-level lookups.</li>
+        <li><strong>Filtered Index:</strong> Index with a WHERE clause — only indexes rows matching the filter. Smaller, faster for specific query patterns (e.g., index only <code>status = 'ACTIVE'</code> rows).</li>
+      </ul>
+      <p><strong>When NOT to index:</strong> Columns with very low cardinality (e.g., <code>gender</code> — only 2 values, a scan is faster than an index on 50% of a table). Tables with very frequent writes — every INSERT/UPDATE/DELETE maintains all indexes. Staging/temp tables — not worth the overhead.</p>
+      <div class="callout warn"><span class="callout-icon">&#x26A0;&#xFE0F;</span><div>Common pitfalls: <strong>functions on indexed columns</strong> prevent index use (<code>WHERE YEAR(order_date)=2024</code> → full scan). <strong>Leading wildcards</strong> in LIKE prevent index use (<code>LIKE '%keyword'</code> → full scan, but <code>LIKE 'keyword%'</code> uses the index).</div></div>
+    </div>
+  </div>
+
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">1</div><div class="q-title-wrap"><div class="q-title">How would you optimize a slow SQL query? What steps and tools do you use?</div><div class="q-tags"><span class="q-tag tag-perf">Performance</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">2</div><div class="q-title-wrap"><div class="q-title">How would you optimize a slow SQL query? What steps and tools do you use?</div><div class="q-tags"><span class="q-tag tag-perf">Performance</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <ol>
         <li><strong>Read the execution plan first:</strong> <code>EXPLAIN ANALYZE SELECT ...</code> — look for full table scans, sort operations, nested loops, and large gaps between estimated and actual row counts.</li>
@@ -1834,7 +1928,7 @@ result = big.join(small, "key_s").drop("salt", "key_s")</code></pre>
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">2</div><div class="q-title-wrap"><div class="q-title">Explain database indexing and its impact on performance.</div><div class="q-tags"><span class="q-tag tag-fund">Fundamentals</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">3</div><div class="q-title-wrap"><div class="q-title">Explain database indexing and its impact on performance.</div><div class="q-tags"><span class="q-tag tag-fund">Fundamentals</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p>An index is a separate data structure (usually a B-tree) that stores a sorted copy of one or more columns along with pointers to the original rows. Instead of scanning every row, the database finds matching rows in O(log n) time.</p>
       <ul>
@@ -1848,7 +1942,7 @@ result = big.join(small, "key_s").drop("salt", "key_s")</code></pre>
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">3</div><div class="q-title-wrap"><div class="q-title">Explain the MERGE statement. How is it different from UPSERT?</div><div class="q-tags"><span class="q-tag tag-code">Code</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">4</div><div class="q-title-wrap"><div class="q-title">Explain the MERGE statement. How is it different from UPSERT?</div><div class="q-tags"><span class="q-tag tag-code">Code</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p>UPSERT is a concept: insert if a record doesn't exist, update if it does. MERGE is the SQL statement that implements this — and more. MERGE is a superset of UPSERT — it can handle UPDATE, INSERT, and DELETE in one atomic statement.</p>
       <pre><code class="language-sql">MERGE INTO target_table AS t
@@ -1866,7 +1960,7 @@ WHEN NOT MATCHED BY SOURCE THEN
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">4</div><div class="q-title-wrap"><div class="q-title">Write a SQL approach to identify duplicate records using multiple columns.</div><div class="q-tags"><span class="q-tag tag-code">Code</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">5</div><div class="q-title-wrap"><div class="q-title">Write a SQL approach to identify duplicate records using multiple columns.</div><div class="q-tags"><span class="q-tag tag-code">Code</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <pre><code class="language-sql">-- Method 1: Find groups with duplicates
 SELECT order_id, customer_id, product_id, COUNT(*) AS duplicate_count
@@ -1895,7 +1989,7 @@ DELETE FROM orders WHERE id IN (SELECT id FROM ranked WHERE rn > 1);</code></pre
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">5</div><div class="q-title-wrap"><div class="q-title">Write a SQL query to find consecutive login days for users.</div><div class="q-tags"><span class="q-tag tag-code">Code</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">6</div><div class="q-title-wrap"><div class="q-title">Write a SQL query to find consecutive login days for users.</div><div class="q-tags"><span class="q-tag tag-code">Code</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <div class="callout info"><span class="callout-icon">&#x1F4A1;</span><div>Key insight: if logins are consecutive, <code>date - ROW_NUMBER()</code> produces the same constant value for all days in a streak. That constant becomes the group key.</div></div>
       <pre><code class="language-sql">WITH deduped AS (
@@ -1926,7 +2020,7 @@ ORDER BY consecutive_days DESC;</code></pre>
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">6</div><div class="q-title-wrap"><div class="q-title">How would you implement data masking in Azure SQL for sensitive columns?</div><div class="q-tags"><span class="q-tag tag-sec">Security</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">7</div><div class="q-title-wrap"><div class="q-title">How would you implement data masking in Azure SQL for sensitive columns?</div><div class="q-tags"><span class="q-tag tag-sec">Security</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p><strong>Dynamic Data Masking (DDM)</strong> is applied at the column definition level. Users without the UNMASK permission see masked values. Data is not changed on disk — masking is applied at query time.</p>
       <pre><code class="language-sql">-- Add masking to existing columns
@@ -1944,23 +2038,8 @@ GRANT UNMASK ON customers TO data_engineer_role;</code></pre>
       <div class="callout warn"><span class="callout-icon">&#x26A0;&#xFE0F;</span><div>DDM does not protect against WHERE clause inference attacks (<code>WHERE salary = 75000</code> still works). Combine with Column-Level Security (DENY SELECT on specific columns) for complete protection.</div></div>
     </div>
   </div>
-  <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">7</div><div class="q-title-wrap"><div class="q-title">Indexes in SQL — types, internals, when to use / avoid</div><div class="q-tags"><span class="q-tag tag-perf">Indexes</span><span class="q-tag tag-fund">Core Concept</span></div></div><div class="q-chevron">▼</div></div>
-    <div class="q-body">
-      <p>An index is a separate data structure (B-tree or other) that stores a sorted copy of one or more columns with pointers to original rows. It converts O(n) table scans into O(log n) lookups.</p>
-      <p><strong>Types:</strong></p>
-      <ul>
-        <li><strong>Clustered Index:</strong> Determines the physical order of rows in the table. One per table. Rows are stored in the B-tree leaf nodes. Range queries on the clustered key are extremely fast. SQL Server PKs are clustered by default.</li>
-        <li><strong>Non-Clustered Index:</strong> Separate structure with key + pointer (row locator) back to the table. Multiple allowed. Best for columns frequently in WHERE, JOIN ON, ORDER BY that aren't the PK.</li>
-        <li><strong>Covering Index (INCLUDE):</strong> A non-clustered index that includes extra columns (via INCLUDE clause) beyond the key. Query can be satisfied entirely from the index — no lookup to the main table ("index-covered query"). Fastest reads for specific query patterns.</li>
-        <li><strong>Composite Index:</strong> Index on multiple columns. Column order matters — the index can only be used for queries that filter on a left-prefix of the index columns. <code>INDEX(a, b, c)</code> can serve <code>WHERE a=?</code>, <code>WHERE a=? AND b=?</code>, but NOT <code>WHERE b=?</code>.</li>
-        <li><strong>Columnstore Index:</strong> Stores data column-by-column (vertically), highly compressed. Optimal for analytics — aggregating millions of rows on a few columns. Used by default in Synapse Dedicated Pool (CCI = Clustered Columnstore Index). Not suited for row-level lookups.</li>
-        <li><strong>Filtered Index:</strong> Index with a WHERE clause — only indexes rows matching the filter. Smaller, faster for specific query patterns (e.g., index only <code>status = 'ACTIVE'</code> rows).</li>
-      </ul>
-      <p><strong>When NOT to index:</strong> Columns with very low cardinality (e.g., <code>gender</code> — only 2 values, a scan is faster than an index on 50% of a table). Tables with very frequent writes — every INSERT/UPDATE/DELETE maintains all indexes. Staging/temp tables — not worth the overhead.</p>
-      <div class="callout warn"><span class="callout-icon">&#x26A0;&#xFE0F;</span><div>Common pitfalls: <strong>functions on indexed columns</strong> prevent index use (<code>WHERE YEAR(order_date)=2024</code> → full scan). <strong>Leading wildcards</strong> in LIKE prevent index use (<code>LIKE '%keyword'</code> → full scan, but <code>LIKE 'keyword%'</code> uses the index).</div></div>
-    </div>
-  </div>
+
+ 
 
   <div class="q-card">
     <div class="q-header" onclick="toggle(this)"><div class="q-num">8</div><div class="q-title-wrap"><div class="q-title">Find employees and their department names — include employees with no department assigned (LEFT JOIN)</div><div class="q-tags"><span class="q-tag tag-code">JOIN</span></div></div><div class="q-chevron">▼</div></div>
@@ -3781,20 +3860,35 @@ df.withColumn("month_end", last_day(col("order_date")))
     <div class="concept-label"><span>&#x1F4D0; Fundamentals</span></div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">1</div><div class="q-title-wrap"><div class="q-title">What is Data Modelling? Why does it matter in data engineering?</div><div class="q-tags"><span class="q-tag tag-model">Fundamentals</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">1</div><div class="q-title-wrap"><div class="q-title">What is Data Modelling?</div><div class="q-tags"><span class="q-tag tag-model">Fundamentals</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
-      <p>Data modelling is the process of defining the structure, relationships, and constraints of data in a system. It answers: what data do we store, how is it related, and how do we organize it for efficient use?</p>
-      <p>In data engineering, good modelling directly impacts: query performance (fewer joins, better pruning), storage efficiency (no redundancy), data quality (enforced constraints), and downstream clarity (analysts and BI tools can self-serve without engineering help on every query).</p>
+      <p>Data Modelling is the Process of Creating a Visual and logical blueprint that defines how data is Structured, organized and Stored &amp; retrieved in a System.</p>
       <ul>
-        <li><strong>Conceptual model:</strong> High-level entities and relationships (ERD) — "Customers place Orders containing Products". Business language, no technical detail.</li>
-        <li><strong>Logical model:</strong> Entities, attributes, data types, primary and foreign keys — technology agnostic.</li>
-        <li><strong>Physical model:</strong> Actual tables, columns, indexes, partitions, distributions — specific to the target technology (Synapse, Delta Lake, PostgreSQL).</li>
+        <li>It makes data easier to understand &amp; use.</li>
+        <li>Improves query Performance.</li>
+        <li>Helps build Scalable System.</li>
+      </ul>
+      <p><strong>Types of Data Models:</strong></p>
+      <p><strong>1. Conceptual Data Model:</strong> It focuses on high-level business concepts and how data is used in an organization. This model defines the Scope of a data System by identifying the type and kind of data, the attributes &amp; the Relationships between them.</p>
+      <p><strong>2. Logical Data Model:</strong> This model builds on the Conceptual data model by adding more detailed &amp; technical information, such as a defined Structure, organization &amp; relationship of the data, tables, Columns &amp; Constraints without specifying technical Storage.</p>
+      <p><strong>3. Physical Data Model:</strong> It represents the implementation of the data model in a specific DBMS. It focuses on Actual implementation of the database using queries and the Chosen DBMS features.</p>
+    </div>
+  </div>
+
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">2</div><div class="q-title-wrap"><div class="q-title">OLTP vs OLAP in Data Modelling</div><div class="q-tags"><span class="q-tag tag-model">Fundamentals</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-body">
+      <ul>
+        <li><strong>OLTP (Online Transaction Processing):</strong> Designed for day-to-day transactional operations. Highly normalized (3NF), optimized for fast reads and writes of individual rows. Low data volume per query. Examples: banking systems, e-commerce order systems, CRM systems. Uses row-oriented storage.</li>
+        <li><strong>OLAP (Online Analytical Processing):</strong> Designed for analytical queries and reporting. Denormalized (star/snowflake schema), optimized for aggregations and scans across large volumes. High data volume per query. Examples: data warehouses, BI dashboards, Synapse, Redshift. Uses columnar storage.</li>
+        <li><strong>Key differences:</strong> OLTP — many small transactions, normalized, row store, millisecond response. OLAP — few large queries, denormalized, columnar store, seconds to minutes response.</li>
+        <li><strong>In Azure:</strong> OLTP → Azure SQL Database, Cosmos DB. OLAP → Synapse Dedicated Pool, Databricks SQL, Synapse Serverless SQL.</li>
       </ul>
     </div>
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">2</div><div class="q-title-wrap"><div class="q-title">Star Schema vs Snowflake Schema vs One Big Table (OBT)</div><div class="q-tags"><span class="q-tag tag-model">Schema Design</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">3</div><div class="q-title-wrap"><div class="q-title">Star Schema vs Snowflake Schema vs One Big Table (OBT)</div><div class="q-tags"><span class="q-tag tag-model">Schema Design</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p><strong>Star Schema:</strong> One central fact table (measurements/events/transactions) surrounded by denormalized dimension tables. Each dimension table connects directly to the fact table. Simple JOIN path, fast queries, easy for BI tools to understand. Best for Synapse, Redshift, traditional DW.</p>
       <p><strong>Snowflake Schema:</strong> Like star schema, but dimension tables are normalized — dimensions reference sub-dimension tables (e.g., <code>dim_product → dim_category → dim_subcategory</code>). Less redundancy, smaller storage, but more JOINs required. Harder for BI tools to auto-generate queries.</p>
@@ -3804,7 +3898,7 @@ df.withColumn("month_end", last_day(col("order_date")))
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">3</div><div class="q-title-wrap"><div class="q-title">Fact Tables vs Dimension Tables — types and design rules</div><div class="q-tags"><span class="q-tag tag-model">Star Schema</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">4</div><div class="q-title-wrap"><div class="q-title">Fact Tables vs Dimension Tables — types and design rules</div><div class="q-tags"><span class="q-tag tag-model">Star Schema</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p><strong>Fact Tables:</strong> Store measurements, events, or transactions. Rows are additive (you can SUM them). Very wide (many metrics) and very tall (billions of rows). Always contain foreign keys to dimension tables + metric columns (amount, quantity, duration).</p>
       <p><strong>Types of fact tables:</strong></p>
@@ -3819,7 +3913,7 @@ df.withColumn("month_end", last_day(col("order_date")))
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">4</div><div class="q-title-wrap"><div class="q-title">Normalization (1NF, 2NF, 3NF) — explain each with an example</div><div class="q-tags"><span class="q-tag tag-model">Normalization</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">5</div><div class="q-title-wrap"><div class="q-title">Normalization (1NF, 2NF, 3NF) — explain each with an example</div><div class="q-tags"><span class="q-tag tag-model">Normalization</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p><strong>1NF (First Normal Form):</strong> Every column must contain atomic (indivisible) values. No repeating groups. Each row must be unique.</p>
       <ul>
@@ -3841,7 +3935,7 @@ df.withColumn("month_end", last_day(col("order_date")))
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">5</div><div class="q-title-wrap"><div class="q-title">Slowly Changing Dimensions (SCD Types 0, 1, 2, 3, 4, 6)</div><div class="q-tags"><span class="q-tag tag-model">SCD</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">6</div><div class="q-title-wrap"><div class="q-title">Slowly Changing Dimensions (SCD Types 0, 1, 2, 3, 4, 6)</div><div class="q-tags"><span class="q-tag tag-model">SCD</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p>SCDs handle how dimension attributes change over time. Choosing the right type is a business decision about history preservation vs complexity.</p>
       <ul>
@@ -3860,7 +3954,7 @@ df.withColumn("month_end", last_day(col("order_date")))
     <div class="concept-label"><span>&#x1F3AF; Scenario-Based & Advanced</span></div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">6</div><div class="q-title-wrap"><div class="q-title">How do you handle Many-to-Many relationships in a Star Schema without creating a Cartesian product?</div><div class="q-tags"><span class="q-tag tag-model">Advanced Modelling</span><span class="q-tag tag-scenario">Scenario</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">7</div><div class="q-title-wrap"><div class="q-title">How do you handle Many-to-Many relationships in a Star Schema without creating a Cartesian product?</div><div class="q-tags"><span class="q-tag tag-model">Advanced Modelling</span><span class="q-tag tag-scenario">Scenario</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p>A many-to-many relationship (e.g., one Order can have many Promotions, one Promotion can apply to many Orders) creates a Cartesian product if you JOIN directly — every order row multiplied by every matching promotion row = duplicated facts (inflated revenue totals).</p>
       <p><strong>Solution: Bridge Table (associative entity)</strong></p>
@@ -3876,7 +3970,7 @@ df.withColumn("month_end", last_day(col("order_date")))
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">7</div><div class="q-title-wrap"><div class="q-title">How do you implement Dynamic Data Masking in a Lakehouse to protect PII data?</div><div class="q-tags"><span class="q-tag tag-sec">PII / Privacy</span><span class="q-tag tag-model">Governance</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">8</div><div class="q-title-wrap"><div class="q-title">How do you implement Dynamic Data Masking in a Lakehouse to protect PII data?</div><div class="q-tags"><span class="q-tag tag-sec">PII / Privacy</span><span class="q-tag tag-model">Governance</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p>PII (Personally Identifiable Information) masking ensures sensitive data (SSN, email, phone, credit card) is visible only to authorized users, even when the underlying data is stored in plain text.</p>
       <p><strong>Azure SQL / Synapse — Dynamic Data Masking (DDM):</strong></p>
@@ -3913,7 +4007,7 @@ ALTER TABLE customers ALTER COLUMN email
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">8</div><div class="q-title-wrap"><div class="q-title">Explain the Data Skipping mechanism in Delta Lake vs traditional SQL indexing</div><div class="q-tags"><span class="q-tag tag-model">Delta Lake</span><span class="q-tag tag-perf">Performance</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">9</div><div class="q-title-wrap"><div class="q-title">Explain the Data Skipping mechanism in Delta Lake vs traditional SQL indexing</div><div class="q-tags"><span class="q-tag tag-model">Delta Lake</span><span class="q-tag tag-perf">Performance</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p><strong>Delta Lake Data Skipping:</strong> For each Parquet file in a Delta table, the transaction log stores file-level statistics: <code>minValues</code>, <code>maxValues</code>, and <code>nullCount</code> per column (for the first 32 columns by default). When you run a query with a filter, Delta checks these stats before opening any file. If a file's min/max range doesn't contain the filter value, the file is skipped entirely — no I/O, no task created.</p>
       <p>Example: <code>WHERE order_date = '2024-03-15'</code> on a table with 1,000 files. If 950 files' date ranges don't include March 15, only 50 files are read. 95% I/O reduction.</p>
@@ -3928,7 +4022,7 @@ ALTER TABLE customers ALTER COLUMN email
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">9</div><div class="q-title-wrap"><div class="q-title">What is the impact of Broadcast Hints on worker memory? When should you avoid them?</div><div class="q-tags"><span class="q-tag tag-perf">Memory</span><span class="q-tag tag-model">Join Strategy</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">10</div><div class="q-title-wrap"><div class="q-title">What is the impact of Broadcast Hints on worker memory? When should you avoid them?</div><div class="q-tags"><span class="q-tag tag-perf">Memory</span><span class="q-tag tag-model">Join Strategy</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p>A broadcast hint sends a full copy of one DataFrame to every executor in the cluster. Memory impact = <strong>table size × number of executors</strong>.</p>
       <p>Example: 500MB table, 200 executors → 100GB of total executor memory consumed just for that broadcast. If executors have 8GB each, this exceeds their capacity → OOM → executor crashes.</p>
@@ -3945,7 +4039,7 @@ ALTER TABLE customers ALTER COLUMN email
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">10</div><div class="q-title-wrap"><div class="q-title">How do you monitor pipeline failures and set up alerting using Azure Monitor and Log Analytics?</div><div class="q-tags"><span class="q-tag tag-model">Monitoring</span><span class="q-tag tag-pattern">Observability</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">11</div><div class="q-title-wrap"><div class="q-title">How do you monitor pipeline failures and set up alerting using Azure Monitor and Log Analytics?</div><div class="q-tags"><span class="q-tag tag-model">Monitoring</span><span class="q-tag tag-pattern">Observability</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p><strong>Layer 1 — ADF Native Alerts:</strong> In ADF Monitor → Alerts → New Alert Rule. Trigger on: Pipeline run failed, Activity run failed, Trigger run failed. Notification: Email, SMS, Teams webhook, Azure Action Group.</p>
       <p><strong>Layer 2 — Azure Monitor + Log Analytics:</strong></p>
@@ -3967,7 +4061,7 @@ ADFPipelineRun
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">11</div><div class="q-title-wrap"><div class="q-title">What is a Data Vault and how does it differ from Star Schema?</div><div class="q-tags"><span class="q-tag tag-model">Advanced Modelling</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">12</div><div class="q-title-wrap"><div class="q-title">What is a Data Vault and how does it differ from Star Schema?</div><div class="q-tags"><span class="q-tag tag-model">Advanced Modelling</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p>Data Vault is a modelling methodology designed for enterprise data warehouses where sources are many, change frequently, and history must be preserved. It has three entity types:</p>
       <ul>
@@ -3985,7 +4079,7 @@ ADFPipelineRun
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">12</div><div class="q-title-wrap"><div class="q-title">How do you design a data model for a multi-tenant SaaS application?</div><div class="q-tags"><span class="q-tag tag-scenario">Scenario</span><span class="q-tag tag-model">Design</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">13</div><div class="q-title-wrap"><div class="q-title">How do you design a data model for a multi-tenant SaaS application?</div><div class="q-tags"><span class="q-tag tag-scenario">Scenario</span><span class="q-tag tag-model">Design</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p>Multi-tenant data modelling requires balancing isolation, cost, and query performance across tenants:</p>
       <p><strong>Option 1 — Shared database, shared schema (most common):</strong> All tenants in the same tables, with a <code>tenant_id</code> column everywhere. Cheapest, easiest to scale. Requires Row-Level Security to ensure tenants can't see each other's data. Risk: one large tenant's queries can impact others (noisy neighbor).</p>
@@ -3997,7 +4091,7 @@ ADFPipelineRun
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">13</div><div class="q-title-wrap"><div class="q-title">How would you model a time-series dataset for efficient querying?</div><div class="q-tags"><span class="q-tag tag-scenario">Scenario</span><span class="q-tag tag-model">Time-Series</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">14</div><div class="q-title-wrap"><div class="q-title">How would you model a time-series dataset for efficient querying?</div><div class="q-tags"><span class="q-tag tag-scenario">Scenario</span><span class="q-tag tag-model">Time-Series</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p>Time-series data (IoT sensor readings, stock prices, website events) has specific patterns: always appended (rarely updated), queried by time range and entity, aggregated over windows.</p>
       <p><strong>Partitioning:</strong> Partition by date (or date + hour for high-frequency data). <code>partitionBy("date")</code> in Delta/Parquet means time-range queries read only relevant partitions — critical for performance on years of data.</p>
@@ -4009,7 +4103,7 @@ ADFPipelineRun
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">14</div><div class="q-title-wrap"><div class="q-title">How do you enforce data quality checks in a large-scale pipeline?</div><div class="q-tags"><span class="q-tag tag-model">Data Quality</span><span class="q-tag tag-pattern">Governance</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">15</div><div class="q-title-wrap"><div class="q-title">How do you enforce data quality checks in a large-scale pipeline?</div><div class="q-tags"><span class="q-tag tag-model">Data Quality</span><span class="q-tag tag-pattern">Governance</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p><strong>Four dimensions of data quality: Completeness, Accuracy, Consistency, Timeliness.</strong></p>
       <p><strong>Checks by layer:</strong></p>
@@ -4038,7 +4132,7 @@ def validate_df(df, name):
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">15</div><div class="q-title-wrap"><div class="q-title">How do you handle stakeholder requirements and changing needs as a data engineer?</div><div class="q-tags"><span class="q-tag tag-model">Collaboration</span><span class="q-tag tag-scenario">Soft Skills</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">16</div><div class="q-title-wrap"><div class="q-title">How do you handle stakeholder requirements and changing needs as a data engineer?</div><div class="q-tags"><span class="q-tag tag-model">Collaboration</span><span class="q-tag tag-scenario">Soft Skills</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p>This is both a technical and a people problem. Key approaches:</p>
       <ul>
@@ -4290,6 +4384,266 @@ def validate_df(df, name):
   </div>
   </div>
 </div><!-- /hr -->
+
+<!-- ════════════════════════════════════════════════════════
+     QUICK NOTES — HANDY REFERENCE
+═══════════════════════════════════════════════════════════ -->
+<div id="handy" class="section">
+  <div class="sec-header">
+    <div class="sec-icon" style="background:#E8F5E9">📋</div>
+    <div><div class="sec-title">Handy Reference</div><div class="sec-desc">Handy reference — PySpark &amp; Spark internals for quick revision</div></div>
+  </div>
+
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">1</div><div class="q-title-wrap"><div class="q-title">RDD vs DataFrame vs Dataset</div></div><div class="q-chevron">▼</div></div>
+    <div class="q-body">
+      <p><strong>① RDD (Resilient Distributed Dataset)</strong> — Low-level distributed collection of objects in Spark.</p>
+      <ul>
+        <li><strong>Characteristics:</strong> Immutable, Distributed, Fault tolerant, Lazy evaluation, Supports functional programming.</li>
+        <li><strong>Features:</strong> No Schema, No optimization, Full control to dev, Can store Structured/Unstructured data.</li>
+        <li><strong>Advantages:</strong> Very flexible, Fine-grained transformations, Suitable for low-level operations.</li>
+        <li><strong>Disadvantages:</strong> Slower, Higher memory consumption, No Catalyst optimization, No Tungsten optimization.</li>
+      </ul>
+      <p><strong>② DataFrames</strong> — Distributed collection of data organized into named columns. Similar to SQL table, Pandas DataFrame.</p>
+      <ul>
+        <li><strong>Characteristics:</strong> Schema based, Distributed, Optimized, Immutable.</li>
+        <li><strong>Major optimizations:</strong> Catalyst Optimizer &amp; Tungsten Engine.</li>
+        <li><strong>Advantages:</strong> Faster than RDD, Less memory usage, Easy SQL integration, Easier syntax.</li>
+        <li><strong>Disadvantages:</strong> Less control than RDD, No compile-time type safety.</li>
+      </ul>
+      <p><strong>③ Dataset</strong> — Strongly typed version of DataFrame ⇒ (DF + Safety). Available mainly in Scala &amp; Java. Not supported in PySpark.</p>
+      <ul>
+        <li><strong>Characteristics:</strong> Type-Safe, Object-Oriented, Optimized.</li>
+        <li><strong>Advantages:</strong> Compile-time type checking, Better error detection, Combines RDD + DF benefits.</li>
+        <li><strong>Disadvantages:</strong> More complex, Not available in Python API.</li>
+      </ul>
+      <div class="callout info"><span class="callout-icon">🔄</span><div><strong>Internal Architecture:</strong><br>
+        RDD → User Code → JVM Objects → Execution (No optimization layer)<br>
+        DF/Dataset → User Query → Catalyst Optimizer → Tungsten Engine → Execution (Highly optimized)</div></div>
+      <div class="callout tip"><span class="callout-icon">📌</span><div>Use <strong>RDD</strong> for low-level transformations &amp; flexibility. Use <strong>DataFrames</strong> for structured data and SQL-like operations. Use <strong>Datasets</strong> when type safety &amp; performance are critical — Scala/Java only.</div></div>
+    </div>
+  </div>
+
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">2</div><div class="q-title-wrap"><div class="q-title">How Fault Tolerance is Achieved in Spark</div></div><div class="q-chevron">▼</div></div>
+    <div class="q-body">
+      <p>If a machine, executor, or task fails during distributed processing, Spark can recover the lost computation automatically without restarting the entire application.</p>
+      <ul>
+        <li><strong>① RDD Lineage</strong> — Core fault tolerance mechanism. Every RDD maintains a lineage graph. Spark remembers where data came from, what transformations were applied, and the dependency chain.</li>
+        <li><strong>② DAG</strong> — Spark converts transformations into a DAG. The DAG scheduler tracks dependencies, identifies failed stages &amp; reruns failed tasks.</li>
+        <li><strong>③ Task Re-execution:</strong> Spark divides work into stages &amp; tasks. If a task fails, Spark retries it automatically.</li>
+        <li><strong>④ Lazy Evaluation helps recovery:</strong> Spark builds the execution plan first. Because Spark knows the full DAG before execution, it can efficiently recover failed computations.</li>
+        <li><strong>⑤ Checkpointing:</strong> Lineage chains can become very long — recomputation becomes expensive. Spark saves RDD physically to HDFS. On failure: Spark loads checkpointed data instead of recomputing entire lineage.</li>
+        <li><strong>⑥ Data Replication:</strong> When persisting RDDs, Spark supports replication — stores 2 copies across nodes. If one executor fails, another copy exists.</li>
+        <li><strong>⑦ Speculative Execution:</strong> Sometimes one executor becomes slow. Spark can run duplicate copies of slow tasks. Whichever finishes first is accepted — improves reliability &amp; execution stability.</li>
+      </ul>
+      <div class="callout tip"><span class="callout-icon">💡</span><div>Spark achieves fault tolerance mainly through <strong>RDD lineage</strong>, allowing lost partitions to be recomputed automatically if an executor or node fails. Also uses DAG scheduling, task retries, checkpointing, storage replication &amp; speculative execution.</div></div>
+    </div>
+  </div>
+
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">3</div><div class="q-title-wrap"><div class="q-title">OOMs - Out of Memory Errors</div></div><div class="q-chevron">▼</div></div>
+    <div class="q-body">
+      <p>Out of Memory happens when JVM heap memory gets exhausted and the process cannot allocate more memory.</p>
+      <ul>
+        <li><strong>① Driver OOM</strong> → Driver JVM</li>
+        <li><strong>② Executor OOM</strong> → Executor JVM</li>
+        <li><strong>③ Overhead OOM</strong> → Non-heap / Container memory</li>
+      </ul>
+      <p><strong>Understanding Driver Memory:</strong></p>
+      <ul>
+        <li>Driver JVM has limited heap memory (Ex → 4GB). If driver tries to hold too much metadata, huge collected data, or massive query plans, the memory exhausts.</li>
+        <li>Driver is <strong>not</strong> meant for large-scale data processing. Executors should process data. Driver should only co-ordinate, manage metadata &amp; receive small summaries.</li>
+        <li><code>Total Driver Container Memory = Driver Heap Memory + Driver Overhead Memory</code> (10% or min 384MB of total memory)</li>
+      </ul>
+      <p><strong>Why Driver OOM?</strong></p>
+      <ul>
+        <li><strong>① df.collect()</strong> → Entire distributed dataset comes to driver.</li>
+        <li><strong>② toPandas()</strong> → Very dangerous for big data — all distributed data converted into local Pandas df inside driver memory.</li>
+        <li><strong>③ Large Broadcast Variables</strong> — Driver creates broadcast object first → driver memory spike.</li>
+        <li><strong>④ Huge Number of Partitions</strong> → Driver stores task metadata. Millions of tiny partitions → massive metadata load.</li>
+        <li><strong>⑤ Complex Transformations</strong> — Nested joins, Unions, CTEs, Wide transformations → increase driver memory.</li>
+      </ul>
+      <div class="callout warn"><span class="callout-icon">⚠️</span><div><code>spark.driver.memoryOverhead</code>: Default → max(384MB, driverMemory × 0.10). Ex: driver memory = 4GB → driver overhead = 1GB. If driver starts behaving like executor, OOM risk becomes huge.</div></div>
+      <p><strong>Why Executor OOM?</strong> Occurs when executor JVM heap/off-heap memory exhausts.</p>
+      <ul>
+        <li><strong>① Data Skew</strong> → one executor processes too heavy partitions.</li>
+        <li><strong>② Large Shuffle</strong> → groupByKey, join, orderBy.</li>
+        <li><strong>③ Excessive Cache/Persist</strong> → storage memory full.</li>
+        <li><strong>④ Too many Concurrent Tasks</strong> → less memory per task.</li>
+        <li><strong>⑤ Using UDF</strong> → serializes data, uses Python worker memory heavily.</li>
+        <li><strong>⑥ Improper Partitioning</strong> → too few partitions, huge task memory load.</li>
+      </ul>
+      
+
+      <p><strong>Task Execution Inside Executor:</strong></p>
+      <ul>
+        <li>If executor has 4 cores, then up to 4 tasks can run simultaneously.</li>
+        <li>Each task gets execution memory, thread, CPU slot.</li>
+        <li><strong>One Partition = One Task.</strong> Tasks are distributed across executors.</li>
+      </ul>
+      <p><strong>Why Spill to Disk Exists:</strong></p>
+      <ul>
+        <li>Memory is limited. During sort, aggregation, and shuffle — data may exceed available memory.</li>
+        <li>Spark spills intermediate data to disk instead of failing immediately — trades speed for stability.</li>
+      </ul>
+      <div class="callout warn"><span class="callout-icon">⚠️</span><div>Spill to disk is the <strong>second-worst outcome</strong> after OOM crashes — disk I/O is 100–1000× slower than RAM. Check Spark UI Stages tab for non-zero "Shuffle Spill (Disk)" values.</div></div>
+    
+    </div>
+  </div>
+
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">4</div><div class="q-title-wrap"><div class="q-title">Narrow vs Wide  &amp; Pyspark Job & Memory Optimization</div></div><div class="q-chevron">▼</div></div>
+    <div class="q-body">
+      <p><strong>Narrow Transformations:</strong> When one child partition depends on only one parent partition. No data movement across executors — no shuffle. Processing stays local to executor — Fast.</p>
+      <ul>
+        <li>No Shuffle, No redistribution, No network transfer.</li>
+        <li><strong>Ex:</strong> <code>map()</code>, <code>filter()</code>, <code>flatMap()</code></li>
+      </ul>
+      <p><strong>Wide Transformations:</strong> When one child partition depends on multiple parent partitions. Requires Shuffle — data moves across partitions, executors &amp; networks.</p>
+      <ul>
+        <li><strong>Ex:</strong> <code>groupByKey()</code>, <code>join()</code>, <code>reduceByKey()</code>, <code>distinct()</code>, <code>orderBy()</code>, <code>repartition()</code></li>
+      </ul>
+      <div class="callout info"><span class="callout-icon">⚡</span><div><strong>How to Optimize a PySpark Job:</strong><br>
+        ① DataFrame/Dataset API instead of RDD &nbsp;|&nbsp; ② Filter early — Predicate Pushdown &nbsp;|&nbsp; ③ Select only required columns — Column Pruning &nbsp;|&nbsp; 
+        ④ Avoid unnecessary Shuffles &nbsp;|&nbsp; ⑤ Use AQE for dynamic optimization &nbsp;|&nbsp; ⑥ Partition data properly &nbsp;|&nbsp; ⑦ Cache/Persist if reused &nbsp;|&nbsp; 
+        ⑧ Avoid UDFs — use built-in functions &nbsp;|&nbsp; ⑨ Handle data Skew (Salting, repartition) &nbsp;|&nbsp; ⑩ Monitor &amp; Tune Spark Configuration.</div></div>
+
+      <div class="callout info"><span class="callout-icon">💡</span><div><strong>Memory Optimization Techniques:</strong><br>
+      ① Use DataFrames instead of RDD &nbsp;|&nbsp; ② Avoid huge collect() &nbsp;|&nbsp; ③ Use broadcast join for small tables &nbsp;|&nbsp; 
+            ④ Reduce Shuffle &nbsp;|&nbsp; ⑤ Use efficient file formats (Parquet, Delta) &nbsp;|&nbsp; ⑥ Avoid excessive caching &nbsp;|&nbsp; ⑦ Partition properly
+      </div></div>
+    </div>
+  </div>
+
+   <div class="q-card">
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">5</div><div class="q-title-wrap"><div class="q-title">SparkContext vs SparkSession & SparkSubmit</div></div><div class="q-chevron">▼</div></div>
+    <div class="q-body">
+      <p><strong>SparkContext (Spark 1.x)</strong> — Only RDDs. The core entry point for Spark Core. Used for RDD operations, cluster communication, and task scheduling.</p>
+      <ul>
+        <li><strong>Responsibilities:</strong> Connect to cluster manager, Create RDDs, Schedule tasks, Manage executors.</li>
+        <li><code>from pyspark import SparkContext as SC → sc = SC("local", "APP")</code></li>
+      </ul>
+      <p><strong>SparkSession (from Spark 2.0)</strong> — It is a unified entry point for all Spark functionalities. Combines SparkContext, SQLContext, HiveContext.</p>
+      <ul>
+        <li>SparkSession internally contains SparkContext.</li>
+        <li>Supports DF, SQL, Hive, Streaming, MLlib.</li>
+        <li><code>spark = SparkSession.builder.appName("Demo").getOrCreate()</code></li>
+      </ul>
+      <div class="callout info"><span class="callout-icon">💡</span><div><strong>Why SparkSession was introduced:</strong> Earlier Spark had SparkContext, SQLContext, HiveContext as too many entry points. SparkSession unified all of the above into one.</div></div>
+      <p><strong>SparkSubmit</strong> — The command-line tool used to submit Spark apps to a cluster. Standard way to launch Spark jobs, allocate resources, specify configurations, and deploy applications.</p>
+      <ul>
+        <li><strong>Why needed:</strong> Spark apps need executor, memory &amp; cluster resources. spark-submit tells the cluster manager: how much memory, how many executors, which deploy mode, which application to run.</li>
+        <li><strong>Basic Syntax:</strong> <code>spark-submit [options] app.py</code></li>
+      </ul>
+      <ul>
+        <li>it is the standard command-line utility used to deploy <span>Spark applications</span> on a cluster. It handles resource allocation, app deployment, executor configuration, driver initialization & Communication with the cluster manager.</li>
+      </ul>
+      <div class="callout info"><span class="callout-icon">🔄</span><div><strong>Flow:</strong> spark-submit → Cluster manager → Driver Created → Executors Allocated → Tasks Executed</div></div>
+    
+    </div>
+  </div>
+
+    <div class="q-card">
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">6</div><div class="q-title-wrap"><div class="q-title">Spark Join Strategies</div></div><div class="q-chevron">▼</div></div>
+    <div class="q-body">
+      <p>Based on table size, cluster resources, and Spark config — Spark chooses one of several join strategies.</p>
+      <ul>
+        <li><strong>① Broadcast Join</strong> — 1 big table &amp; 1 small table (≤10MB). Spark broadcasts the small table to every executor, builds an in-memory hash table from it, and joins locally with partitions of the larger dataset — avoiding expensive shuffles.<br>
+          <code>Default: spark.sql.autoBroadcastJoinThreshold</code> &nbsp;|&nbsp; <code>Force: df1.join(broadcast(df2), "id")</code></li>
+        <li><strong>② Shuffle Hash Join</strong> (medium datasets) — When no table is small enough for broadcasting. Spark shuffles both tables by join key. After shuffle → matching keys reach same executor &amp; hash table built for smaller side. No sorting required. Needs sufficient executor memory.</li>
+        <li><strong>③ Sort Merge Join (Default)</strong> — Both tables shuffled, sorted by join key &amp; merged. Highly scalable &amp; preferred for large distributed joins.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">7</div><div class="q-title-wrap"><div class="q-title">Distributed Variables in Spark — Broadcast Variables & Accumulators</div></div><div class="q-chevron">▼</div></div>
+    <div class="q-body">
+      <p><strong>Broadcast Variables:</strong> Normally, any variable used inside a transformation is serialized and sent to each task (once per task, potentially thousands of copies). Broadcast Variables send the data once to each executor (not each task) and cache it in memory there. All tasks on that executor share one copy.</p>
+      <pre><code class="language-python">lookup_dict = {"NY": "New York", "CA": "California"}
+broadcast_dict = spark.sparkContext.broadcast(lookup_dict)
+
+# Inside transformation - all tasks on same executor share one copy
+df.rdd.map(lambda row: broadcast_dict.value.get(row["state"], "Unknown")).toDF()</code></pre>
+      <p>Use broadcast variables for large lookup dictionaries, config maps, or ML models that need to be available on every executor. For DataFrames, use the <code>broadcast()</code> function hint instead.</p>
+      <p><strong>Accumulators:</strong> Variables that tasks can only add to (write), and only the driver can read. Used to track counters across distributed tasks — e.g., count bad records, count rows processed per pipeline stage.</p>
+      <pre><code class="language-python">bad_records = spark.sparkContext.accumulator(0)
+
+def process_row(row):
+    if row["amount"] is None:
+        bad_records.add(1)
+        return None
+    return row
+
+df.foreach(process_row)
+print(f"Bad records found: {bad_records.value}")</code></pre>
+      <div class="callout warn"><span class="callout-icon">&#x26A0;&#xFE0F;</span><div>Accumulators can be double-counted if a task is retried (Spark re-runs failed tasks). Use them for approximate monitoring metrics, not for business-critical counting. For exact counts, use DataFrame aggregations.</div></div>
+    </div>
+  </div>
+
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">8</div><div class="q-title-wrap"><div class="q-title">What is Checkpointing?</div></div><div class="q-chevron">▼</div></div>
+    <div class="q-body">
+
+    <div class="callout info"><span class="callout-icon">⚡</span><div><strong>What is Checkpointing?</strong><br>
+       Mechanism used by Spark to store progress of streaming pipelines so they can resume after failure. <br>
+       it stores -- Progress information, offset tracking, State Store Data, Commit logs, metadata etc.,</div></div>
+
+      
+      <p><strong>Batch checkpointing:</strong> For very long lineage chains (&gt;~20 chained transformations), <code>rdd.checkpoint()</code> materializes the RDD to ADLS/HDFS, breaking the lineage so recomputations start from the checkpoint.</p>
+      <p><strong>Structured Streaming checkpointing:</strong> The checkpoint directory stores the streaming state — offset tracking (which Kafka messages have been processed), aggregation state (running totals, windowed counts), and query progress metadata. It is how exactly-once processing is guaranteed.</p>
+      <div class="callout warn"><span class="callout-icon">&#x1F6A8;</span><div><strong>If the checkpoint directory is deleted:</strong> The streaming query loses all state. On restart it begins fresh — it may re-read old data, aggregations reset to zero, and exactly-once guarantees are broken. For stateful aggregations this constitutes data loss. <strong>Never delete the checkpoint directory of a running or paused streaming query.</strong></div></div>
+      <pre><code class="language-python">df.writeStream \
+  .format("delta") \
+  .option("checkpointLocation", "/mnt/checkpoints/mystream") \
+  .start("/mnt/delta/output")</code></pre>
+    </div>
+  </div>
+
+
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">9</div><div class="q-title-wrap"><div class="q-title">Serialization & Large CSV reading</div></div><div class="q-chevron">▼</div></div>
+    <div class="q-body">
+      <p>The process of converting an object into a stream of bytes so it can be stored, transferred, or transmitted.</p>
+      <ul>
+        <li><strong>Ex:</strong> <code>Cust = {"id":101, "name":"Salman"}</code> → Inside memory it exists as a complex object. To send it to network, write to disk, or shuffle across executors, Spark must convert it into bytes. This conversion is called Serialization.</li>
+        <li>During Shuffle, Broadcast Joins, Cache, N/W transfer — objects cannot travel directly.</li>
+      </ul>
+      <div class="callout tip"><span class="callout-icon">📌</span><div><strong>Read large CSV file &amp; process it efficiently:</strong><br>
+        ① Don't use inferSchema on huge files &nbsp;|&nbsp; ② Repartition if required &nbsp;|&nbsp; ③ Cache the df if reused &nbsp;|&nbsp; ④ Column Pruning &nbsp;|&nbsp; ⑤ Predicate Pushdown</div></div>
+    </div>
+  </div>
+
+ 
+
+
+
+  <div class="q-card">
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">10</div><div class="q-title-wrap"><div class="q-title">What is DAG, Stage & Task?</div></div><div class="q-chevron">▼</div></div>
+    <div class="q-body">
+      <p><strong>DAG (Directed Acyclic Graph)</strong> — The logical execution plan that Spark builds to determine how to execute transformations and actions efficiently across a distributed cluster. Nodes are transformations, edges define data dependencies — no circular loops.</p>
+      <ul>
+        <li>Spark doesn't execute immediately (lazy evaluation) — it first creates a logical execution plan represented as a DAG.</li>
+        <li>DAG Scheduler: builds DAG → identifies shuffle boundaries → divides into stages → schedules tasks.</li>
+      </ul>
+      <p><strong>What is a Stage?</strong></p>
+      <ul>
+        <li>A collection of tasks that can be executed together without requiring a shuffle.</li>
+        <li>Spark breaks a DAG into stages whenever it encounters a shuffle operation.</li>
+        <li>⇒ Wide Transformation = New Stage. groupBy, join(), distinct() → shuffle → stage boundary.</li>
+        <li><strong>Ex 1:</strong> <code>map → filter → flatMap</code> → all narrow → only 1 stage.</li>
+        <li><strong>Ex 2:</strong> <code>map → filter → reduceByKey</code> → Stage 1: map, filter | Shuffle | Stage 2: reduceByKey</li>
+      </ul>
+      <p><strong>Task</strong> — Smallest unit of execution in Spark. Each task processes exactly one partition.</p>
+      <div class="callout tip"><span class="callout-icon">📊</span><div><strong>Spark hierarchy:</strong> Application → Job → Stage → Task</div></div>
+    </div>
+  </div>
+
+  
+
+
+</div><!-- /handy -->
 
   </main>
 </div><!-- /layout -->
