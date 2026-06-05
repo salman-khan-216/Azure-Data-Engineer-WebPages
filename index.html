@@ -1590,6 +1590,8 @@ df = spark.read.schema(schema).json("path/to/data")</code></pre>
    <div class="q-card">
     <div class="q-header" onclick="toggle(this)"><div class="q-num">3</div><div class="q-title-wrap"><div class="q-title">cache() vs persist()?</div><div class="q-tags"><span class="q-tag tag-perf">Memory</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
+      <p><code>cache()</code> is one of the optimization technique used to improve the performance of Spark applications. 
+            It is used to cache the intermediate results of the transformation so that other transformations can run on top of cached dataframes. These will perform faster.</p>
       <p><code>cache()</code> is shorthand for <code>persist(StorageLevel.MEMORY_AND_DISK)</code>. It tries to store the DataFrame in memory and spills to disk if memory is insufficient.</p>
       <p><code>persist()</code> is the full API — choose the storage level explicitly:</p>
       <ul>
@@ -1597,6 +1599,7 @@ df = spark.read.schema(schema).json("path/to/data")</code></pre>
         <li><strong>MEMORY_AND_DISK:</strong> Default of <code>cache()</code>. Spills excess partitions to disk instead of recomputing. Safe for most use cases.</li>
         <li><strong>DISK_ONLY:</strong> Never uses memory. Use when the DataFrame is too large to fit in memory AND you want to avoid OOM errors. Slower but prevents crashes for extremely large intermediate results.</li>
         <li><strong>MEMORY_AND_DISK_SER:</strong> Serializes objects (smaller footprint) at cost of CPU for ser/deser.</li>
+        <li><strong>Other types are:</strong> MEMORY_SER, DISK_SER, MEMORY_AND_DISK_2, MEMORY_ONLY_2, MEMORY_ONLY_SER etc.,</li>
       </ul>
       <div class="callout warn"><span class="callout-icon">&#x26A0;&#xFE0F;</span><div>Always call <code>unpersist()</code> when done to free resources. Never cache a DataFrame used only once — it's pointless overhead.</div></div>
     </div>
@@ -4560,14 +4563,25 @@ def validate_df(df, name):
   <div class="q-card">
     <div class="q-header" onclick="toggle(this)"><div class="q-num">7</div><div class="q-title-wrap"><div class="q-title">Distributed Variables in Spark — Broadcast Variables & Accumulators</div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
-      <p><strong>Broadcast Variables:</strong> Normally, any variable used inside a transformation is serialized and sent to each task (once per task, potentially thousands of copies). Broadcast Variables send the data once to each executor (not each task) and cache it in memory there. All tasks on that executor share one copy.</p>
+      <p><strong>Broadcast Variables:</strong> is used to cache a large, read-only variable in memory across all executors.
+                  This Prevents to the need to ship a copy of data with every single task, so that data can be processed faster.</p>
+      <p>Data is sent once <strong>Per Executor & Cached locally</strong>, instead of once per task drastically reducing data transfer overhead.</p>
+      <div class="split-grid">
+          <div class="split-pane sql-pane-card">
+            <div class="split-pane-header">&#x1F40D; Python</div>
       <pre><code class="language-python">lookup_dict = {"NY": "New York", "CA": "California"}
 broadcast_dict = spark.sparkContext.broadcast(lookup_dict)
 
 # Inside transformation - all tasks on same executor share one copy
 df.rdd.map(lambda row: broadcast_dict.value.get(row["state"], "Unknown")).toDF()</code></pre>
-      <p>Use broadcast variables for large lookup dictionaries, config maps, or ML models that need to be available on every executor. For DataFrames, use the <code>broadcast()</code> function hint instead.</p>
-      <p><strong>Accumulators:</strong> Variables that tasks can only add to (write), and only the driver can read. Used to track counters across distributed tasks — e.g., count bad records, count rows processed per pipeline stage.</p>
+</div>
+    </div>
+      <div class="callout tip"><span class="callout-icon">✅</span><div>Use broadcast variables for large lookup dictionaries, config maps, or ML models that need to be available on every executor. For DataFrames, use the <code>broadcast()</code> function hint instead.</div></div>
+      <p><strong>Accumulators:</strong> is a shared variable used to aggregate values from all tasks across a cluster back to the driver.</p>
+      <p>These will be processed row-by-row in a distributed fashion in each of the executor & that will be updated once a row is processed.</p>
+      <div class="split-grid">
+          <div class="split-pane sql-pane-card">
+            <div class="split-pane-header">&#x1F40D; Python</div>
       <pre><code class="language-python">bad_records = spark.sparkContext.accumulator(0)
 
 def process_row(row):
@@ -4578,6 +4592,8 @@ def process_row(row):
 
 df.foreach(process_row)
 print(f"Bad records found: {bad_records.value}")</code></pre>
+    </div>
+    </div>
       <div class="callout warn"><span class="callout-icon">&#x26A0;&#xFE0F;</span><div>Accumulators can be double-counted if a task is retried (Spark re-runs failed tasks). Use them for approximate monitoring metrics, not for business-critical counting. For exact counts, use DataFrame aggregations.</div></div>
     </div>
   </div>
@@ -4594,10 +4610,17 @@ print(f"Bad records found: {bad_records.value}")</code></pre>
       <p><strong>Batch checkpointing:</strong> For very long lineage chains (&gt;~20 chained transformations), <code>rdd.checkpoint()</code> materializes the RDD to ADLS/HDFS, breaking the lineage so recomputations start from the checkpoint.</p>
       <p><strong>Structured Streaming checkpointing:</strong> The checkpoint directory stores the streaming state — offset tracking (which Kafka messages have been processed), aggregation state (running totals, windowed counts), and query progress metadata. It is how exactly-once processing is guaranteed.</p>
       <div class="callout warn"><span class="callout-icon">&#x1F6A8;</span><div><strong>If the checkpoint directory is deleted:</strong> The streaming query loses all state. On restart it begins fresh — it may re-read old data, aggregations reset to zero, and exactly-once guarantees are broken. For stateful aggregations this constitutes data loss. <strong>Never delete the checkpoint directory of a running or paused streaming query.</strong></div></div>
+      
+      <div class="split-grid">
+          <div class="split-pane sql-pane-card">
+            <div class="split-pane-header">&#x1F40D; Python</div>
       <pre><code class="language-python">df.writeStream \
   .format("delta") \
   .option("checkpointLocation", "/mnt/checkpoints/mystream") \
   .start("/mnt/delta/output")</code></pre>
+
+    </div>
+  </div>
     </div>
   </div>
 
