@@ -4563,6 +4563,7 @@ def validate_df(df, name):
   <div class="q-card">
     <div class="q-header" onclick="toggle(this)"><div class="q-num">7</div><div class="q-title-wrap"><div class="q-title">Distributed Variables in Spark — Broadcast Variables & Accumulators</div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
+      <p>Normally, any variable used inside a transformation is serialized and sent to each task (once per task, potentially thousands of copies). </p>
       <p><strong>Broadcast Variables:</strong> is used to cache a large, read-only variable in memory across all executors.
                   This Prevents to the need to ship a copy of data with every single task, so that data can be processed faster.</p>
       <p>Data is sent once <strong>Per Executor & Cached locally</strong>, instead of once per task drastically reducing data transfer overhead.</p>
