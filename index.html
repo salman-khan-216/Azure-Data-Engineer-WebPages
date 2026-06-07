@@ -698,7 +698,7 @@
     <ul class="nav-list">
       <li class="nav-item"><button onclick="show('intro')" class="active"><span class="nav-dot"></span>Intro<span class="nav-count">3</span></button></li>
       <li class="nav-item"><button onclick="show('handy')"><span class="nav-dot"></span>Handy Set<span class="nav-count">10</span></button></li>
-      <li class="nav-item"><button onclick="show('pyspark')"><span class="nav-dot"></span>PySpark<span class="nav-count">13</span></button></li>
+      <li class="nav-item"><button onclick="show('pyspark')"><span class="nav-dot"></span>PySpark<span class="nav-count">14</span></button></li>
       <li class="nav-item"><button onclick="show('general')"><span class="nav-dot"></span>General<span class="nav-count">7</span></button></li>
       <li class="nav-item"><button onclick="show('sql')"><span class="nav-dot"></span>SQL<span class="nav-count">11</span></button></li>
       <li class="nav-item"><button onclick="show('databricks')"><span class="nav-dot"></span>Databricks<span class="nav-count">10</span></button></li>
@@ -1548,8 +1548,10 @@ df = spark.read.schema(schema).json("path/to/data")</code></pre>
     <div><div class="sec-title">PySpark</div><div class="sec-desc">Skew, UDFs, partitioning, memory, AQE, streaming, nested JSON</div></div>
   </div>
 
+ 
+
     <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">1</div><div class="q-title-wrap"><div class="q-title">Spark Architecture — Driver, Executors, Cluster Manager, DAG</div><div class="q-tags"><span class="q-tag tag-fund">Architecture</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">1</div><div class="q-title-wrap"><div class="q-title">Spark Architecture — Driver, Executors, Cluster Manager, DAG, Lazy Evaluation</div><div class="q-tags"><span class="q-tag tag-fund">Architecture</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p><strong>Core components:</strong></p>
       <ul>
@@ -1558,13 +1560,107 @@ df = spark.read.schema(schema).json("path/to/data")</code></pre>
         <li><strong>Cluster Manager:</strong> Allocates resources (executors) to the Spark application. In Databricks: YARN (legacy) or Kubernetes. In standalone: Spark's built-in manager. The driver requests resources from the cluster manager.</li>
         <li><strong>DAG (Directed Acyclic Graph):</strong> Spark builds a logical plan of transformations lazily. When an action (<code>count()</code>, <code>write()</code>, <code>collect()</code>) is triggered, the Catalyst optimizer converts the logical plan into a physical plan, splits it into stages at shuffle boundaries, and each stage into tasks (one task per partition).</li>
         <li><strong>RDD → DataFrame → Dataset:</strong> RDDs are the low-level distributed data structure. DataFrames are RDDs with schema — the Catalyst optimizer can reason about them. Always use DataFrames/SQL in production, not raw RDDs.</li>
-        <li><strong>Lazy evaluation:</strong> Transformations (<code>filter()</code>, <code>join()</code>, <code>select()</code>) don't execute immediately. They build the DAG. Only actions trigger actual computation. This allows Catalyst to optimize the full plan before executing anything.</li>
+        <li><strong>Lazy evaluation:</strong> Transformations (<code>filter()</code>, <code>join()</code>, <code>select()</code>) don't execute immediately. They build the DAG. Only actions trigger actual computation. This allows Catalyst to optimize the full plan before executing anything.
+        <br>
+        <ul>
+        <li>Instead of executing the logic/transformations & generating the output immediately, spark stores the instructions in a DAG to execute them when an action iss triggered. This allows Spark to optimize the execution plan across multiple transformations before running anything.
+        <br>
+        <br>
+        By not executing the transformations immediately, we avoid bringing the entire dataframe into memory at once, which can lead to OOM errors. Instead, Spark processes data in partitions and only when necessary, allowing it to handle large datasets efficiently.</li>
+        </ul>
+        </li>
+        </li>
       </ul>
     </div>
   </div>
 
+ <div class="q-card">
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">2</div>
+    <div class="q-title-wrap">
+      <div class="q-title">Memory Management in Spark</div>
+      <div class="q-tags"><span class="q-tag tag-perf">Memory</span><span class="q-tag tag-fund">Internals</span></div>
+    </div>
+    <div class="q-chevron">▼</div>
+  </div>
+  <div class="q-body">
+    <p>Spark runs on JVM and every executor has a fixed memory container. Spark divides that memory into regions — each with a specific job. Think of it like a restaurant kitchen with dedicated stations.</p>
+
+    <div style="border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);overflow:hidden;margin:14px 0;">
+      <div style="padding:10px 14px;background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-tertiary);font-size:12px;font-weight:500;color:var(--color-text-secondary);">
+        <i class="ti ti-server" style="font-size:13px;margin-right:5px;" aria-hidden="true"></i>Executor container — 4 GB total (example)
+      </div>
+
+      <div style="padding:12px 14px;display:flex;flex-direction:column;gap:8px;">
+
+        <div style="border-radius:var(--border-radius-md);overflow:hidden;border:0.5px solid #B5D4F4;">
+          <div style="background:#E6F1FB;padding:7px 12px;display:flex;justify-content:space-between;align-items:center;">
+            <span style="font-size:13px;font-weight:500;color:#0C447C;">Reserved memory</span>
+            <span style="font-size:12px;color:#185FA5;background:#fff;border:0.5px solid #B5D4F4;border-radius:4px;padding:1px 8px;">~300 MB fixed</span>
+          </div>
+          <div style="padding:7px 12px;font-size:12.5px;color:var(--color-text-secondary);">
+            Spark's internal objects (SparkContext, metadata). You cannot touch this. <em>Kitchen: the fridge and utilities — always reserved.</em>
+          </div>
+        </div>
+
+        <div style="border-radius:var(--border-radius-md);overflow:hidden;border:0.5px solid #9FE1CB;">
+          <div style="background:#E1F5EE;padding:7px 12px;display:flex;justify-content:space-between;align-items:center;">
+            <span style="font-size:13px;font-weight:500;color:#085041;">User memory</span>
+            <span style="font-size:12px;color:#0F6E56;background:#fff;border:0.5px solid #9FE1CB;border-radius:4px;padding:1px 8px;">~40% of remaining</span>
+          </div>
+          <div style="padding:7px 12px;font-size:12.5px;color:var(--color-text-secondary);">
+            Your Python objects, custom data structures, UDF variables. Spark doesn't manage this — it's yours. <em>Kitchen: your personal prep table.</em>
+          </div>
+        </div>
+
+        <div style="border-radius:var(--border-radius-md);overflow:hidden;border:0.5px solid #FAC775;">
+          <div style="background:#FAEEDA;padding:7px 12px;display:flex;justify-content:space-between;align-items:center;">
+            <span style="font-size:13px;font-weight:500;color:#633806;">Spark (unified) memory — 60% of remaining</span>
+            <span style="font-size:12px;color:#854F0B;background:#fff;border:0.5px solid #FAC775;border-radius:4px;padding:1px 8px;">shared pool</span>
+          </div>
+          <div style="padding:8px 12px;display:grid;grid-template-columns:1fr 1fr;gap:8px;border-top:0.5px solid #FAC775;">
+            <div style="background:#1f2423;border:0.5px solid #FAC775;border-radius:6px;padding:8px 10px;">
+              <div style="font-size:12px;font-weight:500;color:#d6ad7a;margin-bottom:3px;">Execution memory</div>
+              <div style="font-size:12px;color:var(--color-text-secondary);">Shuffle, sort, join, aggregation. Spills to disk when full. <em>The cooking station.</em></div>
+            </div>
+            <div style="background:#1f2423;border:0.5px solid #FAC775;border-radius:6px;padding:8px 10px;">
+              <div style="font-size:12px;font-weight:500;color:#d6ad7a;margin-bottom:3px;">Storage memory</div>
+              <div style="font-size:12px;color:var(--color-text-secondary);">Cached DataFrames. Evicted when execution needs space. <em>The warming shelf.</em></div>
+            </div>
+          </div>
+          <div style="padding:7px 12px;font-size:12px;color:var(--color-text-secondary);border-top:0.5px solid #FAC775;">
+            <i class="ti ti-arrow-right" style="font-size:12px;margin-right:4px;" aria-hidden="true"></i>These two share the same pool and borrow from each other dynamically — this is called <strong>Unified Memory Model</strong> (default since Spark 1.6).
+          </div>
+        </div>
+
+        <div style="border-radius:var(--border-radius-md);overflow:hidden;border:0.5px solid #AFA9EC;">
+          <div style="background:#EEEDFE;padding:7px 12px;display:flex;justify-content:space-between;align-items:center;">
+            <span style="font-size:13px;font-weight:500;color:#3C3489;">Overhead memory</span>
+            <span style="font-size:12px;color:#534AB7;background:#fff;border:0.5px solid #AFA9EC;border-radius:4px;padding:1px 8px;">10% of executor memory (min 384 MB)</span>
+          </div>
+          <div style="padding:7px 12px;font-size:12.5px;color:var(--color-text-secondary);">
+            Off-heap: JVM threads, Python worker processes, network buffers, GC structures. Driver also has this. <em>Kitchen: ventilation and plumbing — invisible but critical.</em>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <p style="font-size:13.5px;color:var(--color-text-secondary);margin:8px 0 4px;"><strong style="color:var(--color-text-primary);">What happens during a join? (real example)</strong></p>
+    <ul>
+      <li>Spark reads two DataFrames and starts shuffling them by join key — this uses <strong>execution memory</strong>.</li>
+      <li>If you called <code>df.cache()</code> earlier, that cached data sits in <strong>storage memory</strong>.</li>
+      <li>If execution memory fills up, Spark <strong>spills to disk</strong> (slow but doesn't crash).</li>
+      <li>If storage memory is needed by execution, Spark <strong>evicts the cache</strong> automatically.</li>
+      <li>If even the overhead fills up → <strong>OOM error</strong> — the executor dies.</li>
+    </ul>
+
+    <div class="callout warn"><span class="callout-icon">⚠️</span><div><strong>Common traps:</strong> calling <code>toPandas()</code> or <code>collect()</code> sends everything to <strong>driver memory</strong> (not executor) — driver has no execution/storage split, just a JVM heap. Overflow it and the entire application crashes, not just one task.</div></div>
+  </div>
+</div>
+
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">2</div><div class="q-title-wrap"><div class="q-title">Catalyst Optimizer & Tungsten Engine</div><div class="q-tags"><span class="q-tag tag-perf">Internals</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">3</div><div class="q-title-wrap"><div class="q-title">Catalyst Optimizer & Tungsten Engine</div><div class="q-tags"><span class="q-tag tag-perf">Internals</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p><strong>Catalyst Optimizer</strong> is Spark's intelligent query optimizer that automatically rewrites the pyspark code into the fastest possible execution plan. It decides how to execute efficiently. It works in 4 phases:</p>
       <ol>
@@ -1588,7 +1684,7 @@ df = spark.read.schema(schema).json("path/to/data")</code></pre>
   </div>
 
    <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">3</div><div class="q-title-wrap"><div class="q-title">cache() vs persist()?</div><div class="q-tags"><span class="q-tag tag-perf">Memory</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">4</div><div class="q-title-wrap"><div class="q-title">cache() vs persist()?</div><div class="q-tags"><span class="q-tag tag-perf">Memory</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p><code>cache()</code> is one of the optimization technique used to improve the performance of Spark applications. 
             It is used to cache the intermediate results of the transformation so that other transformations can run on top of cached dataframes. These will perform faster.</p>
@@ -1606,7 +1702,7 @@ df = spark.read.schema(schema).json("path/to/data")</code></pre>
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">4</div><div class="q-title-wrap"><div class="q-title">Adaptive Query Execution (AQE)</div><div class="q-tags"><span class="q-tag tag-perf">Optimization</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">5</div><div class="q-title-wrap"><div class="q-title">Adaptive Query Execution (AQE)</div><div class="q-tags"><span class="q-tag tag-perf">Optimization</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p>Traditional Spark optimization happens at query parse time based on statistics that may be stale or missing. AQE (Spark 3.0+) re-optimizes the query plan <strong>at runtime</strong> using actual shuffle statistics.</p>
       <ul>
@@ -1619,7 +1715,7 @@ df = spark.read.schema(schema).json("path/to/data")</code></pre>
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">5</div><div class="q-title-wrap"><div class="q-title">Data Skewness in a PySpark cluster</div><div class="q-tags"><span class="q-tag tag-perf">Performance</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">6</div><div class="q-title-wrap"><div class="q-title">Data Skewness in a PySpark cluster</div><div class="q-tags"><span class="q-tag tag-perf">Performance</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p>Data skew occurs when data is not evenly distributed across partitions. One partition may have 10 million rows while others have 10,000 — that one task takes 100x longer and becomes the bottleneck of the entire stage.</p>
       <ul>
@@ -1634,7 +1730,7 @@ df = spark.read.schema(schema).json("path/to/data")</code></pre>
   
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">6</div><div class="q-title-wrap"><div class="q-title">Explain the difference between Vectorized UDF (pandas_udf) and standard UDF. Which is more efficient?</div><div class="q-tags"><span class="q-tag tag-perf">Performance</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">7</div><div class="q-title-wrap"><div class="q-title">Explain the difference between Vectorized UDF (pandas_udf) and standard UDF. Which is more efficient?</div><div class="q-tags"><span class="q-tag tag-perf">Performance</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p><strong>Standard UDF:</strong> A Python function registered to run row-by-row. Spark cannot optimize it — it's a black box. Each row is serialized from JVM → Python process → processed → serialized back. This overhead is enormous, and UDFs disable Catalyst optimizations like predicate pushdown.</p>
       <p><strong>Vectorized UDF (pandas_udf):</strong> Data is batched into Pandas Series using Apache Arrow for zero-copy serialization. Much faster — typically 3-10x compared to row-at-a-time UDFs.</p>
@@ -1651,7 +1747,7 @@ df.withColumn("result", multiply_by_two(col("amount")))</code></pre>
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">7</div><div class="q-title-wrap"><div class="q-title">Explain partitioning and bucketing in Apache Spark and when to use each.</div><div class="q-tags"><span class="q-tag tag-arch">Storage</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">8</div><div class="q-title-wrap"><div class="q-title">Explain partitioning and bucketing in Apache Spark and when to use each.</div><div class="q-tags"><span class="q-tag tag-arch">Storage</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p><strong>Partitioning</strong> splits data into directories based on column values — e.g., <code>partitionBy("year", "month")</code> creates <code>year=2024/month=01/</code> folders. Queries filtering on the partition column skip entire directories (partition pruning). Best for low-cardinality columns like date, region, or status. High-cardinality columns (user_id) → millions of tiny files (small files problem).</p>
       <p><strong>Bucketing</strong> hashes data into a fixed number of files (buckets) based on a column. Files are in one directory; the structure is internal metadata. Key benefit: when two tables are bucketed on the same column with the same bucket count, Spark can join them without any shuffle.</p>
@@ -1664,7 +1760,7 @@ df.withColumn("result", multiply_by_two(col("amount")))</code></pre>
  
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">8</div><div class="q-title-wrap"><div class="q-title">Explain Broadcast Hash Joins. What is the default threshold size in Spark?</div><div class="q-tags"><span class="q-tag tag-perf">Optimization</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">9</div><div class="q-title-wrap"><div class="q-title">Explain Broadcast Hash Joins. What is the default threshold size in Spark?</div><div class="q-tags"><span class="q-tag tag-perf">Optimization</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p>In a regular join, Spark must shuffle both tables across the network so matching keys land on the same executor. In a <strong>Broadcast Hash Join</strong>, the smaller table is fully copied ("broadcast") to every executor — no shuffle needed.</p>
       <p><strong>Default auto-broadcast threshold: 10MB</strong> (<code>spark.sql.autoBroadcastJoinThreshold = 10485760</code>). If the smaller table is under 10MB, Spark automatically broadcasts it.</p>
@@ -1676,7 +1772,7 @@ df_large.join(broadcast(df_small), "key")</code></pre>
 
   
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">9</div><div class="q-title-wrap"><div class="q-title">What is Spark Spill? How do you identify it in the Spark UI and resolve it?</div><div class="q-tags"><span class="q-tag tag-debug">Performance</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">10</div><div class="q-title-wrap"><div class="q-title">What is Spark Spill? How do you identify it in the Spark UI and resolve it?</div><div class="q-tags"><span class="q-tag tag-debug">Performance</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p>Spill occurs when a Spark task's in-memory data exceeds available executor memory. Spark writes excess to disk and reads it back when needed — disk I/O is 100-1000x slower than RAM.</p>
       <p><strong>Identify:</strong> Spark UI → Stages tab → look for non-zero <em>Shuffle Spill (Memory)</em> and <em>Shuffle Spill (Disk)</em> columns. Also check Stage detail → Task metrics for high "Disk bytes spilled".</p>
@@ -1690,7 +1786,7 @@ df_large.join(broadcast(df_small), "key")</code></pre>
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">10</div><div class="q-title-wrap"><div class="q-title">How do you handle the Small File Problem in a Data Lake? Coalesce vs. repartition?</div><div class="q-tags"><span class="q-tag tag-perf">Performance</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">11</div><div class="q-title-wrap"><div class="q-title">How do you handle the Small File Problem in a Data Lake? Coalesce vs. repartition?</div><div class="q-tags"><span class="q-tag tag-perf">Performance</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p>Thousands of tiny files require a metadata call per file and Spark creates one task per file — 10,000 files = 10,000 tasks = scheduler and storage service overwhelm.</p>
       <ul>
@@ -1706,7 +1802,7 @@ df.repartition(10).write.parquet("output/")   # expensive, perfectly even</code>
   
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">11</div><div class="q-title-wrap"><div class="q-title">Write PySpark code to process and flatten nested JSON data.</div><div class="q-tags"><span class="q-tag tag-code">Code</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">12</div><div class="q-title-wrap"><div class="q-title">Write PySpark code to process and flatten nested JSON data.</div><div class="q-tags"><span class="q-tag tag-code">Code</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p>Key functions: <code>explode()</code> for arrays (drops null rows), <code>explode_outer()</code> keeps null rows, <code>col("struct.field")</code> accesses nested struct fields.</p>
       <pre><code class="language-python">from pyspark.sql.functions import col, explode_outer
@@ -1744,7 +1840,7 @@ df_flat.show()</code></pre>
 
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">12</div><div class="q-title-wrap"><div class="q-title">How do you implement parallel processing in Python for ETL workloads? How do you structure a reusable Python ETL framework?</div><div class="q-tags"><span class="q-tag tag-arch">Python ETL</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">13</div><div class="q-title-wrap"><div class="q-title">How do you implement parallel processing in Python for ETL workloads? How do you structure a reusable Python ETL framework?</div><div class="q-tags"><span class="q-tag tag-arch">Python ETL</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p><strong>Parallel processing options in Python:</strong></p>
       <ul>
@@ -1783,7 +1879,7 @@ with ThreadPoolExecutor(max_workers=4) as executor:
 
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">13</div><div class="q-title-wrap"><div class="q-title">Partitioning strategies and how they impact performance</div><div class="q-tags"><span class="q-tag tag-perf">Partitioning</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">14</div><div class="q-title-wrap"><div class="q-title">Partitioning strategies and how they impact performance</div><div class="q-tags"><span class="q-tag tag-perf">Partitioning</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p><strong>Physical partitioning (on disk):</strong> Splitting data into directories based on column values — <code>partitionBy("year","month")</code>. Queries filtering on those columns skip irrelevant directories (partition pruning). Performance is excellent for the partition columns; no benefit for other columns.</p>
       <p><strong>Choosing partition columns:</strong> Low cardinality (date, region, status) — good. High cardinality (user_id, order_id) — bad (millions of tiny directories = small files problem, driver overwhelmed by metadata).</p>
