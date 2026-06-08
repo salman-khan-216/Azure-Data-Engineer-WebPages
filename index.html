@@ -701,7 +701,7 @@
       <li class="nav-item"><button onclick="show('pyspark')"><span class="nav-dot"></span>PySpark<span class="nav-count">14</span></button></li>
       <li class="nav-item"><button onclick="show('general')"><span class="nav-dot"></span>General<span class="nav-count">7</span></button></li>
       <li class="nav-item"><button onclick="show('sql')"><span class="nav-dot"></span>SQL<span class="nav-count">11</span></button></li>
-      <li class="nav-item"><button onclick="show('databricks')"><span class="nav-dot"></span>Databricks<span class="nav-count">10</span></button></li>
+      <li class="nav-item"><button onclick="show('databricks')"><span class="nav-dot"></span>Databricks<span class="nav-count">11</span></button></li>
       <li class="nav-item"><button onclick="show('delta')"><span class="nav-dot"></span>Delta Lake<span class="nav-count">5</span></button></li>
       <li class="nav-item"><button onclick="show('adf')"><span class="nav-dot"></span>ADF<span class="nav-count">11</span></button></li>
       <li class="nav-item"><button onclick="show('synapse')"><span class="nav-dot"></span>Synapse<span class="nav-count">11</span></button></li>
@@ -1380,8 +1380,125 @@ WITH (FILE_TYPE = 'PARQUET', CREDENTIAL = ('Managed Identity'));</code></pre>
     <div><div class="sec-title">Azure Databricks</div><div class="sec-desc">OOM troubleshooting, monitoring, schema management, ETL frameworks</div></div>
   </div>
 
+
+<div class="q-card">
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">1</div>
+    <div class="q-title-wrap">
+      <div class="q-title">Databricks Architecture</div>
+      <div class="q-tags"><span class="q-tag tag-arch">Architecture</span><span class="q-tag tag-fund">Internals</span></div>
+    </div>
+    <div class="q-chevron">▼</div>
+  </div>
+  <div class="q-body">
+    <p>Databricks is built on top of Apache Spark and runs on cloud infrastructure (Azure, AWS, GCP). It has a two-plane architecture — the control plane managed by Databricks, and the data plane managed by your cloud account.</p>
+
+      <div style="border-radius:var(--border-radius-md);overflow:hidden;border:0.5px solid #60A5FA;margin:14px 0;">
+
+  <div style="background:#DBEAFE;padding:7px 12px;display:flex;justify-content:space-between;align-items:center;">
+    <span style="font-size:13px;font-weight:500;color:#1E3A8A;">
+      Databricks Architecture
+    </span>
+
+    <span style="font-size:12px;color:#1D4ED8;background:#fff;border:0.5px solid #93C5FD;border-radius:4px;padding:1px 8px;">
+      Two-Plane Model
+    </span>
+  </div>
+
+  <div style="padding:8px 12px;display:grid;grid-template-columns:1fr 1fr;gap:8px;border-top:0.5px solid #93C5FD;">
+
+    <!-- Control Plane -->
+    <div style="background:#1f2423;border:0.5px solid #93C5FD;border-radius:6px;padding:8px 10px;">
+
+      <div style="font-size:12px;font-weight:500;color:#93C5FD;margin-bottom:6px;">
+        Control Plane — Databricks-managed
+      </div>
+
+      <div style="font-size:12px;color:var(--color-text-secondary);line-height:1.7;">
+        • Workspace UI<br>
+        • Job Scheduler &amp; Orchestrator<br>
+        • Notebook &amp; IDE<br>
+        • Unity Catalog (governance)<br>
+        • IAM &amp; Access Control
+      </div>
+
+    </div>
+
+    <!-- Data Plane -->
+    <div style="background:#1f2423;border:0.5px solid #93C5FD;border-radius:6px;padding:8px 10px;">
+
+      <div style="font-size:12px;font-weight:500;color:#93C5FD;margin-bottom:6px;">
+        Data Plane — your cloud account
+      </div>
+
+      <div style="font-size:12px;color:var(--color-text-secondary);line-height:1.7;">
+        • Spark Clusters (VMs)<br>
+        • ADLS Gen2 / S3 / GCS<br>
+        • Delta Lake tables<br>
+        • Virtual Network (VNet)<br>
+        • Key Vault / Secrets
+      </div>
+
+    </div>
+
+  </div>
+
+  <div style="padding:7px 12px;font-size:12px;color:var(--color-text-secondary);border-top:0.5px solid #93C5FD;">
+    <strong>Control Plane:</strong> Lives in Databricks' cloud account. You never see this infrastructure.
+    <br>
+    <strong>Data Plane:</strong> Lives in your Azure subscription. Your data never leaves this plane.
+  </div>
+
+</div>
+
+    <ul>
+      <li><strong>Cluster types:</strong> All-purpose clusters (interactive notebooks, development — always running, expensive) vs Job clusters (auto-created for a specific job run, auto-terminated after — cheaper, recommended for production).</li>
+      <li><strong>Cluster modes:</strong> Standard (single-user), High Concurrency (multi-user, SQL focused), Single Node (driver only, no workers — for small local jobs).</li>
+      <li><strong>Databricks Runtime (DBR):</strong> A packaged version of Spark + optimised libraries (Delta, MLflow, etc.). Each cluster picks a DBR version. Always use the latest LTS version in production for stability.</li>
+      <li><strong>Repos:</strong> Native Git integration — connect notebooks directly to Azure DevOps or GitHub. Enables version control without leaving the workspace.</li>
+      <li><strong>Workflows (Jobs):</strong> Multi-task job orchestration built into Databricks — chain notebooks, Python scripts, JAR files with dependencies. Alternative to ADF for Databricks-only pipelines.</li>
+    </ul>
+
+    <div style="border:0.5px solid #9FE1CB;border-radius:var(--border-radius-lg);overflow:hidden;margin:16px 0 10px;">
+      <div style="background:#E1F5EE;padding:9px 14px;border-bottom:0.5px solid #9FE1CB;display:flex;align-items:center;gap:8px;">
+        <i class="ti ti-shield-check" style="font-size:15px;color:#0F6E56;" aria-hidden="true"></i>
+        <span style="font-size:13px;font-weight:500;color:#085041;">Unity Catalog — Databricks' data governance layer</span>
+      </div>
+      <div style="padding:12px 14px;display:flex;flex-direction:column;gap:10px;">
+
+        <p style="font-size:13.5px;color:var(--color-text-primary);margin:0;">Unity Catalog is a centralised metadata and governance layer that sits across all Databricks workspaces in an account. Before Unity Catalog, every workspace had its own Hive metastore — isolated, hard to share, no cross-workspace governance. Unity Catalog solves that.</p>
+
+        <div style="background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:10px 12px;">
+          <div style="font-size:12px;font-weight:500;color:var(--color-text-secondary);margin-bottom:8px;">Three-level namespace</div>
+          <div style="display:flex;align-items:center;gap:0;font-size:13px;font-weight:500;flex-wrap:wrap;gap:4px;">
+            <span style="background:#E1F5EE;color:#085041;border:0.5px solid #9FE1CB;border-radius:6px;padding:4px 12px;">Catalog</span>
+            <span style="color:var(--color-text-secondary);padding:0 4px;">→</span>
+            <span style="background:#E1F5EE;color:#085041;border:0.5px solid #9FE1CB;border-radius:6px;padding:4px 12px;">Schema (Database)</span>
+            <span style="color:var(--color-text-secondary);padding:0 4px;">→</span>
+            <span style="background:#E1F5EE;color:#085041;border:0.5px solid #9FE1CB;border-radius:6px;padding:4px 12px;">Table / View / Volume</span>
+          </div>
+          <div style="margin-top:8px;font-size:12.5px;color:var(--color-text-secondary);">Ex: <code>citi_catalog.silver.customer_transactions</code></div>
+        </div>
+
+        <ul style="margin:0;">
+          <li><strong>Centralised access control:</strong> Grant/revoke permissions on catalogs, schemas, tables, and even individual columns — all from one place, applied across every workspace.</li>
+          <li><strong>Column-level security &amp; row filters:</strong> Mask PII columns for unauthorised users. Apply row-level filters so different teams only see their own data — all enforced at query time, no copies needed.</li>
+          <li><strong>Data lineage:</strong> Unity Catalog automatically tracks which notebook/job read or wrote each table, and which columns were used. Useful for impact analysis — "if I change this column, what breaks?"</li>
+          <li><strong>Audit logs:</strong> Every query, every data access is logged. Who read what, when, from which cluster — exported to ADLS or Azure Monitor.</li>
+          <li><strong>External locations &amp; storage credentials:</strong> Register your ADLS paths as External Locations with a Storage Credential (service principal or managed identity). Tables referencing these paths inherit governance automatically — no manual access management per cluster.</li>
+        </ul>
+
+        <div class="callout tip"><span class="callout-icon">💡</span><div>In an interview: <em>"Unity Catalog replaced the per-workspace Hive metastore with a single governance layer — one place for permissions, lineage, auditing, and data discovery across all workspaces and all clouds. It's what makes Databricks enterprise-ready for compliance requirements like GDPR and HIPAA."</em></div></div>
+
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">1</div><div class="q-title-wrap"><div class="q-title">A Databricks job is failing with Out-of-Memory (OOM) errors. How would you troubleshoot it?</div><div class="q-tags"><span class="q-tag tag-debug">Troubleshooting</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">2</div><div class="q-title-wrap"><div class="q-title">A Databricks job is failing with Out-of-Memory (OOM) errors. How would you troubleshoot it?</div><div class="q-tags"><span class="q-tag tag-debug">Troubleshooting</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <ol>
         <li><strong>Identify where OOM occurs:</strong> Driver OOM → you're collecting too much data to the driver (<code>collect()</code>, <code>toPandas()</code>, large broadcast). Executor OOM → individual tasks are too memory-heavy.</li>
@@ -1397,7 +1514,7 @@ WITH (FILE_TYPE = 'PARQUET', CREDENTIAL = ('Managed Identity'));</code></pre>
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">2</div><div class="q-title-wrap"><div class="q-title">How do you monitor and troubleshoot failed jobs in Azure Databricks?</div><div class="q-tags"><span class="q-tag tag-debug">Monitoring</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">3</div><div class="q-title-wrap"><div class="q-title">How do you monitor and troubleshoot failed jobs in Azure Databricks?</div><div class="q-tags"><span class="q-tag tag-debug">Monitoring</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <ul>
         <li><strong>Databricks Jobs UI:</strong> Workflows → Jobs → click the failed run to see task-level status and error messages.</li>
@@ -1410,7 +1527,7 @@ WITH (FILE_TYPE = 'PARQUET', CREDENTIAL = ('Managed Identity'));</code></pre>
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">3</div><div class="q-title-wrap"><div class="q-title">What is the difference between schema inference and predefined schema in PySpark? Which is better in production?</div><div class="q-tags"><span class="q-tag tag-pattern">Schema</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">4</div><div class="q-title-wrap"><div class="q-title">What is the difference between schema inference and predefined schema in PySpark? Which is better in production?</div><div class="q-tags"><span class="q-tag tag-pattern">Schema</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p><strong>Schema inference</strong> means Spark reads a sample of the data and auto-detects column names and types. Convenient in development, but problematic in production:</p>
       <ul>
@@ -1430,7 +1547,7 @@ df = spark.read.schema(schema).json("path/to/data")</code></pre>
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">4</div><div class="q-title-wrap"><div class="q-title">How would you build a reusable Python ETL framework in Databricks?</div><div class="q-tags"><span class="q-tag tag-arch">Architecture</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">5</div><div class="q-title-wrap"><div class="q-title">How would you build a reusable Python ETL framework in Databricks?</div><div class="q-tags"><span class="q-tag tag-arch">Architecture</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <ul>
         <li><strong>Config-driven:</strong> Store pipeline configs in JSON, YAML, or a control SQL table. Code reads config at runtime — add a new pipeline by adding a config row, not writing new code.</li>
@@ -1444,7 +1561,7 @@ df = spark.read.schema(schema).json("path/to/data")</code></pre>
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">5</div><div class="q-title-wrap"><div class="q-title">How do you handle Schema Drift using ADF and Databricks?</div><div class="q-tags"><span class="q-tag tag-debug">Schema Management</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">6</div><div class="q-title-wrap"><div class="q-title">How do you handle Schema Drift using ADF and Databricks?</div><div class="q-tags"><span class="q-tag tag-debug">Schema Management</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p>Schema drift = source adds/removes/renames columns unexpectedly, breaking your pipeline.</p>
       <p><strong>In ADF Data Flow:</strong> Enable "Allow schema drift" on the source transformation. ADF will pass through unknown columns. Use "Auto mapping" in the sink.</p>
@@ -1458,7 +1575,7 @@ df = spark.read.schema(schema).json("path/to/data")</code></pre>
     </div>
   </div>
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">6</div><div class="q-title-wrap"><div class="q-title">How do you optimize a slow Databricks job? End-to-end approach.</div><div class="q-tags"><span class="q-tag tag-perf">Performance</span><span class="q-tag tag-debug">Tuning</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">7</div><div class="q-title-wrap"><div class="q-title">How do you optimize a slow Databricks job? End-to-end approach.</div><div class="q-tags"><span class="q-tag tag-perf">Performance</span><span class="q-tag tag-debug">Tuning</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p>Work through these layers in order — fix the cheapest issue first:</p>
       <ol>
@@ -1475,7 +1592,7 @@ df = spark.read.schema(schema).json("path/to/data")</code></pre>
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">7</div><div class="q-title-wrap"><div class="q-title">How do you control Azure costs across your data platform?</div><div class="q-tags"><span class="q-tag tag-cost">Cost Optimization</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">8</div><div class="q-title-wrap"><div class="q-title">How do you control Azure costs across your data platform?</div><div class="q-tags"><span class="q-tag tag-cost">Cost Optimization</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <ul>
         <li><strong>Databricks:</strong> Use spot instances for batch (90% cheaper). Use job clusters (auto-terminate) not all-purpose clusters (idle billing). Enable auto-termination (15–30 min idle). Use cluster pools for faster spin-up without idle cost. Right-size — profile job metrics and pick smallest fitting cluster.</li>
@@ -1489,7 +1606,7 @@ df = spark.read.schema(schema).json("path/to/data")</code></pre>
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">8</div><div class="q-title-wrap"><div class="q-title">How do you ensure data quality and monitoring in production pipelines?</div><div class="q-tags"><span class="q-tag tag-pattern">Data Quality</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">9</div><div class="q-title-wrap"><div class="q-title">How do you ensure data quality and monitoring in production pipelines?</div><div class="q-tags"><span class="q-tag tag-pattern">Data Quality</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p><strong>Data Quality Checks (at each layer):</strong></p>
       <ul>
@@ -1511,7 +1628,7 @@ df = spark.read.schema(schema).json("path/to/data")</code></pre>
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">9</div><div class="q-title-wrap"><div class="q-title">Describe a production issue you handled end-to-end.</div><div class="q-tags"><span class="q-tag tag-debug">Scenario</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">10</div><div class="q-title-wrap"><div class="q-title">Describe a production issue you handled end-to-end.</div><div class="q-tags"><span class="q-tag tag-debug">Scenario</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p>"Our nightly ADF pipeline that loaded source tables from on-prem SQL Server into ADLS Gen2 started failing intermittently — specifically on some Mondays. Other days it ran fine, which made it harder to diagnose.</p>
       <p>I checked ADF Monitor and found the Copy Activity was timing out on the SHIR connection. I SSH'd into the SHIR machine and found the disk was at 98% capacity — weeks of ADF diagnostic logs had accumulated with no rotation policy in place. I cleared the logs, freed the disk, and manually re-triggered the pipeline. It completed in 35 minutes.</p>
@@ -1522,7 +1639,7 @@ df = spark.read.schema(schema).json("path/to/data")</code></pre>
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">10</div><div class="q-title-wrap"><div class="q-title">A job works in Dev but fails in Production — how would you debug it?</div><div class="q-tags"><span class="q-tag tag-debug">Debugging</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">11</div><div class="q-title-wrap"><div class="q-title">A job works in Dev but fails in Production — how would you debug it?</div><div class="q-tags"><span class="q-tag tag-debug">Debugging</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p>This is one of the most common real-world scenarios. Check these differences between Dev and Prod:</p>
       <ol>
