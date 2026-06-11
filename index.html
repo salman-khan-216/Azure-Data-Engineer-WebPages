@@ -708,6 +708,7 @@
       <li class="nav-item"><button onclick="show('security')"><span class="nav-dot"></span>Security<span class="nav-count">5</span></button></li>
       <li class="nav-item"><button onclick="show('coding')"><span class="nav-dot"></span>Coding<span class="nav-count">22</span></button></li>
       <li class="nav-item"><button onclick="show('datamodel')"><span class="nav-dot"></span>Data Modelling<span class="nav-count">16</span></button></li>
+      <li class="nav-item"><button onclick="show('airflow')"><span class="nav-dot"></span>Airflow<span class="nav-count">8</span></button></li>
       <li class="nav-item"><button onclick="show('hr')"><span class="nav-dot"></span>HR<span class="nav-count">20</span></button></li>
     </ul>
   </aside>
@@ -4062,6 +4063,249 @@ df.withColumn("month_end", last_day(col("order_date")))
 </div><!-- /coding -->
 
 
+<div id="airflow" class="section">
+<div class="q-card">
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">1</div>
+    <div class="q-title-wrap">
+      <div class="q-title">What is Apache Airflow?</div>
+      <div class="q-tags"><span class="q-tag tag-fund">Overview</span></div>
+    </div>
+    <div class="q-chevron">▼</div>
+  </div>
+  <div class="q-body">
+    <p>Airflow is an open-source framework which can be used as an <strong>Orchestrator</strong>. Orchestration means managing execution order, timing, retries, dependencies and monitoring workflows.</p>
+    <p>So Airflow is an open-source platform to programmatically author, schedule, and monitor workflows. We write workflows using Python code — this concept is called <strong>DAG-as-Code</strong>.</p>
+    <ul>
+      <li><strong>History:</strong> Created at Airbnb in 2014. Later donated to Apache Software Foundation.</li>
+      <li>Airflow is based on DAG (Directed Acyclic Graph). Everything in Airflow is a DAG.</li>
+    </ul>
+    <p><strong>What Airflow is NOT:</strong></p>
+    <ul>
+      <li>Not a Data Processing / Real-Time Processing framework.</li>
+      <li>Not an ETL framework.</li>
+      <li>Doesn't store / process big data.</li>
+    </ul>
+    <div class="callout info"><span class="callout-icon">💡</span><div>It only <strong>triggers, monitors &amp; manages order</strong>. It triggers Spark jobs, Python scripts, SQL, Bash commands, API calls.</div></div>
+    <p><strong>Why companies prefer DAG-as-Code instead of Drag/Drop tools:</strong></p>
+    <ul class="ul-2col">
+      <li>Version Control (Git integration) — changes can be tracked</li>
+      <li>Code review process — checking pull requests, reviewing workflow logic</li>
+      <li>Reusability &amp; Modularity — dynamically generate multiple pipelines</li>
+      <li>Testing — code can be tested</li>
+      <li>Complex logic handling</li>
+      <li>Infrastructure as Code philosophy</li>
+    </ul>
+  </div>
+</div>
+
+<div class="q-card">
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">2</div>
+    <div class="q-title-wrap">
+      <div class="q-title">What is a DAG in Airflow?</div>
+      <div class="q-tags"><span class="q-tag tag-fund">Core Concept</span></div>
+    </div>
+    <div class="q-chevron">▼</div>
+  </div>
+  <div class="q-body">
+    <p>DAG stands for <strong>Directed Acyclic Graph</strong>.</p>
+    <ul>
+      <li><strong>Directed:</strong> Edges have direction → Task A → Task B. This means A must complete before B starts.</li>
+      <li><strong>Acyclic:</strong> No loops allowed. Airflow forbids cycles.</li>
+      <li><strong>Graph:</strong> It is Nodes (tasks) &amp; Edges (dependencies).</li>
+    </ul>
+    <p>It is a Python object that defines a workflow structure &amp; schedule. DAG doesn't execute tasks — it defines structure.</p>
+    <p><strong>Ex:</strong> Architectural drawing of a building, not the building. Blueprint of a pipeline, not the pipeline itself.</p>
+    <div class="schema-box">
+      <strong>Real Example:</strong><br>
+      start → extract-A → Transform-A → Load<br>
+      start → extract-B → Transform-B → Load<br>
+      (2 parallel branches merge into 1 task — a valid DAG)
+    </div>
+    <p><strong>DAG vs Task:</strong></p>
+    <ul>
+      <li>DAG is a full workflow — contains tasks &amp; has a schedule.</li>
+      <li>Task is a single step — executes logic &amp; has execution logic.</li>
+    </ul>
+    <p><strong>Execution Flow — when scheduler sees a DAG:</strong></p>
+    <ol>
+      <li>Creates DAG Run.</li>
+      <li>Creates Task Instance.</li>
+      <li>Sends Task to executor.</li>
+      <li>Worker executes.</li>
+    </ol>
+    <div class="callout tip"><span class="callout-icon">📌</span><div>DAG defines structure. Task instance represents one execution of a task.</div></div>
+  </div>
+</div>
+
+<div class="q-card">
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">3</div>
+    <div class="q-title-wrap">
+      <div class="q-title">What are the Core Components of Airflow?</div>
+      <div class="q-tags"><span class="q-tag tag-arch">Architecture</span></div>
+    </div>
+    <div class="q-chevron">▼</div>
+  </div>
+  <div class="q-body">
+    <ul>
+      <li><strong>① Metadata DB:</strong> Airflow needs to store all the metadata about the DAGs — like DAG runs, schedule, status, task instances.</li>
+      <li><strong>② DAG File Processor:</strong> It will go to the DAGs folder, parse it, and store the serialized DAG into the DB for the scheduler to use.</li>
+      <li><strong>③ API Server (Web Server):</strong> API is the middleman for every task. It serves the Airflow UI and provides REST API for interacting with Airflow — including for the UI, workers &amp; external clients.</li>
+      <li><strong>④ Scheduler:</strong> The heart of Airflow. Responsible for monitoring DAGs, scheduling task instances based on dependencies and timing, and submitting tasks to the executor.</li>
+      <li><strong>⑤ Executor:</strong> It determines how &amp; where tasks need to run. It is a configuration of the scheduler (not a separate component). Common executors: Local Executor (for dev), Celery Executor (for distributed workers), Kubernetes Executor (for dynamic pod-based execution).</li>
+      <li><strong>⑥ Workers:</strong> A process that runs tasks as defined by the executor. Workers are the real layer for execution.</li>
+      <li><strong>⑦ Queue:</strong> Executor prioritizes the tasks to which worker will have to work.</li>
+      <li><strong>⑧ Triggerer:</strong> Designed to improve efficiency of long-running tasks, particularly those that depend on external sources. Instead of blocking workers, the triggerer handles tasks asynchronously — improving resource usage &amp; scalability. Allows Airflow to scale more effectively when workflows have tasks involving waiting for external events.</li>
+    </ul>
+  </div>
+</div>
+
+<div class="q-card">
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">4</div>
+    <div class="q-title-wrap">
+      <div class="q-title">Airflow Architecture — end-to-end flow</div>
+      <div class="q-tags"><span class="q-tag tag-arch">Architecture</span></div>
+    </div>
+    <div class="q-chevron">▼</div>
+  </div>
+  <div class="q-body">
+    <div class="schema-box">
+      <strong>Flow:</strong><br>
+      Dev → DAGs folder → DAG Processor → Metadata DB → API → Scheduler → Execution Queue → Executor → Worker → Execute → Redis Queue → Triggerer
+    </div>
+    <ul>
+      <li><strong>Dev</strong> writes the .py files in the dags folder.</li>
+      <li><strong>DAG Processor</strong> parses the DAG files, extracts task definitions, and stores metadata in the DB. Creates task instances &amp; creates execution queue.</li>
+      <li><strong>Scheduler</strong> decides when DAG runs are runnable tasks, and pushes them into the metadata DB. The DAG runs are read from the metadata DB.</li>
+      <li><strong>Executor</strong> decides the strategy — it will put all the tasks in the Redis queue. Executor pulls tasks from Redis queue, executes items &amp; updates status in metadata DB.</li>
+      <li><strong>Triggerer</strong> is used for Deferrable Operators. Handles tasks waiting asynchronously for file, trigger etc. Logs metadata, stores DAG runs, task instances, status. If metadata DB goes down — XCom, connections, variables, Airflow stop functioning.</li>
+    </ul>
+  </div>
+</div>
+
+<div class="q-card">
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">5</div>
+    <div class="q-title-wrap">
+      <div class="q-title">What are Operators and Tasks in Airflow?</div>
+      <div class="q-tags"><span class="q-tag tag-fund">Core Concept</span></div>
+    </div>
+    <div class="q-chevron">▼</div>
+  </div>
+  <div class="q-body">
+    <p>An <strong>Operator</strong> is a pre-defined way to execute some type of work.</p>
+    <p><strong>Ex:</strong> Bash, Python, Empty, Email, BranchPythonOperator etc.</p>
+    <ul>
+      <li><strong>Operator</strong> → Template / Class</li>
+      <li><strong>Task</strong> → instance of that operator inside a DAG</li>
+      <li><strong>Task instance</strong> → one execution of that task for one DAG run</li>
+    </ul>
+    <p><strong>Task:</strong> It is a node in a DAG that wraps an operator and becomes executable at runtime.</p>
+    <p><strong>DAG Versioning:</strong> Whenever a new change is applied, after parsing, it will create another version of the DAG like V1, V2, V3... All the versions can be accessed from options.</p>
+  </div>
+</div>
+
+<div class="q-card">
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">6</div>
+    <div class="q-title-wrap">
+      <div class="q-title">What is XCom in Airflow?</div>
+      <div class="q-tags"><span class="q-tag tag-pattern">Communication</span></div>
+    </div>
+    <div class="q-chevron">▼</div>
+  </div>
+  <div class="q-body">
+    <p>XCom = <strong>Cross Communication</strong>. It allows one task to send small pieces of data to another task.</p>
+    <ul>
+      <li>XCom is <strong>NOT</strong> for larger data.</li>
+      <li>Used for: IDs, filenames, status flags, small JSON etc.</li>
+      <li>Not for: Large DataFrames, Big CSVs, Binary files.</li>
+    </ul>
+    <p><strong>How XCom works internally:</strong> When a task returns a value, Airflow automatically stores the return value in XCom, saves it in Metadata DB — which is associated with task_id + DAG Run. Downstream task can pull it.</p>
+    <ul>
+      <li><code>ti</code> → Task Instance Object. It allows to pull data from previous task → <code>ti.xcom_pull()</code></li>
+    </ul>
+    <div class="callout warn"><span class="callout-icon">⚠️</span><div>If too much data is stored/shared through XCom: DB will bloat, Scheduler slows down, Web server becomes unstable, System performance degrades.</div></div>
+    <p><strong>What is Context:</strong> Runtime metadata passed to task. It contains dag_id, task_id, run_id, execution_date, logical_date, previous_task_state.</p>
+    <p><strong>Two ways to use XCom:</strong></p>
+    <ul>
+      <li><strong>Automatic XCom:</strong> Task uses <code>@task.python</code> decorator — simply return a value from first task and pass it as argument to second task. Airflow automatically handles the push/pull.</li>
+      <li><strong>Manual XCom (kwargs):</strong> Extract <code>ti</code> from kwargs. Push using <code>ti.xcom_push(key='return_result', value=fetch_data)</code>. Pull using <code>ti.xcom_pull(task_id='first_id', key='return_result')</code>.</li>
+    </ul>
+  </div>
+</div>
+
+<div class="q-card">
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">7</div>
+    <div class="q-title-wrap">
+      <div class="q-title">How do you write your first DAG in Airflow?</div>
+      <div class="q-tags"><span class="q-tag tag-code">Code</span></div>
+    </div>
+    <div class="q-chevron">▼</div>
+  </div>
+  <div class="q-body">
+    <p>We will create a simple flow with 3 tasks: Task-1 → Task-2 → Task-3. Task-1 is completed when the above task is done.</p>
+    <div class="split-pane py-pane-card">
+            <div class="split-pane-header">&#x1F40D; PySpark</div>
+    <pre><code class="language-python">from airflow.sdk import dag, task
+
+@dag(dag_id = "first-dag")
+def first_dag():
+
+    @task.python
+    def first_task():
+        print("This is 1st task")
+
+    @task.python
+    def second_task():
+        print("This is end task")
+
+    @task.python
+    def third_task():
+        print("This is 3rd task")
+
+    # Defining Task Dependencies
+    first  = first_task()
+    second = second_task()
+    third  = third_task()
+
+    first >> second >> third  # first → second → third
+
+first_dag()</code></pre></div>
+
+
+
+
+    <div class="callout info"><span class="callout-icon">💡</span><div><code>dag_id</code> is unique id for the dag. Specify it — if we don't, it will take the function name by default. The DAGs are stored in the <code>serialized_dag</code> table in Postgres DB.</div></div>
+  </div>
+</div>
+
+<div class="q-card">
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">8</div>
+    <div class="q-title-wrap">
+      <div class="q-title">How does Airflow compare to ADF for orchestration?</div>
+      <div class="q-tags"><span class="q-tag tag-scenario">Comparison</span></div>
+    </div>
+    <div class="q-chevron">▼</div>
+  </div>
+  <div class="q-body">
+    <ul>
+      <li><strong>Airflow:</strong> Open-source, code-first (Python DAGs), platform-agnostic, excellent for complex logic, branching, dynamic pipeline generation, strong community. Self-hosted or managed (MWAA, Astronomer, Cloud Composer).</li>
+      <li><strong>ADF:</strong> Azure-native, GUI-based (low-code), tightly integrated with Azure services (ADLS, Synapse, SQL). Best for Azure-to-Azure pipelines, no coding needed for simple ETL.</li>
+    </ul>
+    <ul>
+      <li>Use <strong>Airflow</strong> when: cross-cloud, complex branching logic, dynamic DAG generation, code review workflow, non-Azure sources.</li>
+      <li>Use <strong>ADF</strong> when: fully Azure ecosystem, team is not Python-heavy, quick Azure service integration needed.</li>
+    </ul>
+    <div class="callout tip"><span class="callout-icon">📌</span><div>In interviews: "Both are orchestrators — they trigger and monitor, not process data. Airflow gives more flexibility and testability through Python code. ADF gives tighter Azure integration with a visual interface."</div></div>
+  </div>
+</div>
+</div>
 
 <!-- ════════════════════════════════════════════════════════
      DATA MODELLING
