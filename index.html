@@ -707,8 +707,8 @@
       <li class="nav-item"><button onclick="show('synapse')"><span class="nav-dot"></span>Synapse<span class="nav-count">11</span></button></li>
       <li class="nav-item"><button onclick="show('security')"><span class="nav-dot"></span>Security<span class="nav-count">5</span></button></li>
       <li class="nav-item"><button onclick="show('coding')"><span class="nav-dot"></span>Coding<span class="nav-count">22</span></button></li>
-      <li class="nav-item"><button onclick="show('airflow')"><span class="nav-dot"></span>Airflow<span class="nav-count">8</span></button></li>
       <li class="nav-item"><button onclick="show('datamodel')"><span class="nav-dot"></span>Data Modelling<span class="nav-count">16</span></button></li>
+      <li class="nav-item"><button onclick="show('airflow')"><span class="nav-dot"></span>Airflow<span class="nav-count">8</span></button></li>
       <li class="nav-item"><button onclick="show('hr')"><span class="nav-dot"></span>HR<span class="nav-count">20</span></button></li>
     </ul>
   </aside>
@@ -1852,6 +1852,9 @@ df = spark.read.schema(schema).json("path/to/data")</code></pre>
     <div class="q-body">
       <p><strong>Standard UDF:</strong> A Python function registered to run row-by-row. Spark cannot optimize it — it's a black box. Each row is serialized from JVM → Python process → processed → serialized back. This overhead is enormous, and UDFs disable Catalyst optimizations like predicate pushdown.</p>
       <p><strong>Vectorized UDF (pandas_udf):</strong> Data is batched into Pandas Series using Apache Arrow for zero-copy serialization. Much faster — typically 3-10x compared to row-at-a-time UDFs.</p>
+      <div class="split-grid">
+          <div class="split-pane py-pane-card">
+            <div class="split-pane-header">&#x1F40D; PySpark</div>
       <pre><code class="language-python">from pyspark.sql.functions import pandas_udf
 import pandas as pd
 
@@ -1859,7 +1862,7 @@ import pandas as pd
 def multiply_by_two(s: pd.Series) -> pd.Series:
     return s * 2
 
-df.withColumn("result", multiply_by_two(col("amount")))</code></pre>
+df.withColumn("result", multiply_by_two(col("amount")))</code></pre></div></div>
       <div class="callout info"><span class="callout-icon">&#x1F3C6;</span><div>Performance ranking: <strong>Native Spark functions</strong> > <strong>Vectorized pandas_udf</strong> > <strong>Row-at-a-time UDF</strong>. Always prefer native functions — they're fully optimized by the Catalyst engine.</div></div>
     </div>
   </div>
@@ -1869,8 +1872,11 @@ df.withColumn("result", multiply_by_two(col("amount")))</code></pre>
     <div class="q-body">
       <p><strong>Partitioning</strong> splits data into directories based on column values — e.g., <code>partitionBy("year", "month")</code> creates <code>year=2024/month=01/</code> folders. Queries filtering on the partition column skip entire directories (partition pruning). Best for low-cardinality columns like date, region, or status. High-cardinality columns (user_id) → millions of tiny files (small files problem).</p>
       <p><strong>Bucketing</strong> hashes data into a fixed number of files (buckets) based on a column. Files are in one directory; the structure is internal metadata. Key benefit: when two tables are bucketed on the same column with the same bucket count, Spark can join them without any shuffle.</p>
+      <div class="split-grid">
+          <div class="split-pane py-pane-card">
+            <div class="split-pane-header">&#x1FF40D; PySpark</div>
       <pre><code class="language-python">df.write.bucketBy(64, "customer_id").sortBy("customer_id")\
-    .saveAsTable("orders_bucketed")</code></pre>
+    .saveAsTable("orders_bucketed")</code></pre></div></div>
       <p>Partitioning is for <strong>read-time pruning</strong> (filter performance). Bucketing is for <strong>join performance</strong> (shuffle elimination). They can be combined.</p>
     </div>
   </div>
@@ -1882,8 +1888,11 @@ df.withColumn("result", multiply_by_two(col("amount")))</code></pre>
     <div class="q-body">
       <p>In a regular join, Spark must shuffle both tables across the network so matching keys land on the same executor. In a <strong>Broadcast Hash Join</strong>, the smaller table is fully copied ("broadcast") to every executor — no shuffle needed.</p>
       <p><strong>Default auto-broadcast threshold: 10MB</strong> (<code>spark.sql.autoBroadcastJoinThreshold = 10485760</code>). If the smaller table is under 10MB, Spark automatically broadcasts it.</p>
+      <div class="split-grid">
+          <div class="split-pane py-pane-card">
+            <div class="split-pane-header">&#x1FF40D; PySpark</div>
       <pre><code class="language-python">from pyspark.sql.functions import broadcast
-df_large.join(broadcast(df_small), "key")</code></pre>
+df_large.join(broadcast(df_small), "key")</code></pre></div></div>
       <div class="callout warn"><span class="callout-icon">&#x26A0;&#xFE0F;</span><div>Broadcasting a 500MB table to 100 executors = 50GB total memory consumed. Increase the threshold carefully. Use the explicit <code>broadcast()</code> hint when Spark's size estimate is off.</div></div>
     </div>
   </div>
@@ -1911,8 +1920,11 @@ df_large.join(broadcast(df_small), "key")</code></pre>
         <li><strong>coalesce(N):</strong> Reduces partition count without a full shuffle. Very efficient. Output may be slightly uneven. Use when reducing files before writing and balanced output is not critical.</li>
         <li><strong>repartition(N):</strong> Full shuffle — redistributes data evenly across N partitions. More expensive but produces balanced, evenly-sized output files.</li>
       </ul>
+      <div class="split-grid">
+          <div class="split-pane py-pane-card">
+            <div class="split-pane-header">&#x1FF40D; PySpark</div>
       <pre><code class="language-python">df.coalesce(10).write.parquet("output/")      # cheap, slightly uneven
-df.repartition(10).write.parquet("output/")   # expensive, perfectly even</code></pre>
+df.repartition(10).write.parquet("output/")   # expensive, perfectly even</code></pre></div></div>
       <div class="callout tip"><span class="callout-icon">&#x1F4A1;</span><div>In Delta Lake: use the <code>OPTIMIZE</code> command which compacts small files into larger ones (default ~1GB) via bin-packing. Schedule nightly alongside <strong>Auto-Compaction</strong> for real-time mitigation.</div></div>
     </div>
   </div>
@@ -1923,6 +1935,9 @@ df.repartition(10).write.parquet("output/")   # expensive, perfectly even</code>
     <div class="q-header" onclick="toggle(this)"><div class="q-num">12</div><div class="q-title-wrap"><div class="q-title">Write PySpark code to process and flatten nested JSON data.</div><div class="q-tags"><span class="q-tag tag-code">Code</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p>Key functions: <code>explode()</code> for arrays (drops null rows), <code>explode_outer()</code> keeps null rows, <code>col("struct.field")</code> accesses nested struct fields.</p>
+      <div class="split-grid">
+          <div class="split-pane py-pane-card">
+            <div class="split-pane-header">&#x1FF40D; PySpark</div>
       <pre><code class="language-python">from pyspark.sql.functions import col, explode_outer
 
 # Read nested JSON
@@ -1954,6 +1969,8 @@ df_flat = df_items.select(
 df_flat.show()</code></pre>
     </div>
   </div>
+    </div>
+  </div>
 
 
 
@@ -1966,6 +1983,9 @@ df_flat.show()</code></pre>
         <li><strong>concurrent.futures.ThreadPoolExecutor:</strong> Thread-based parallelism. Best for I/O-bound tasks (API calls, file reads, DB connections) where most time is waiting, not computing. GIL is released during I/O.</li>
         <li><strong>asyncio:</strong> Single-threaded async. Best for high-concurrency I/O (hundreds of API calls simultaneously) without thread overhead.</li>
       </ul>
+      <div class="split-grid">
+          <div class="split-pane py-pane-card">
+            <div class="split-pane-header">&#x1FF40D; PySpark</div>
       <pre><code class="language-python">from concurrent.futures import ThreadPoolExecutor, as_completed
 
 tables = ["orders", "customers", "products", "inventory"]
@@ -1982,7 +2002,7 @@ with ThreadPoolExecutor(max_workers=4) as executor:
     futures = {executor.submit(process_table, t): t for t in tables}
     for future in as_completed(futures):
         print(future.result())
-</code></pre>
+</code></pre></div></div>
       <p><strong>Reusable ETL Framework structure:</strong></p>
       <ul>
         <li><code>config/</code> — pipeline configs as JSON/YAML (source, target, transformations, schedule)</li>
@@ -2110,8 +2130,478 @@ result = big.join(small, "key_s").drop("salt", "key_s")</code></pre>
     <div><div class="sec-title">SQL</div><div class="sec-desc">Query optimization, indexing, MERGE, duplicates, consecutive logins, masking</div></div>
   </div>
 
+<!--
+<div class="q-card">
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">X</div>
+    <div class="q-title-wrap">
+      <div class="q-title">
+        Explain important SQL concepts used in real projects.
+      </div>
+    </div>
+    <div class="q-chevron">▼</div>
+  </div>
+
+  <div class="q-body">
+
+    <h4>1. SQL Query Execution Order</h4>
+
+    <p>
+      Although we write SQL in one order, the database executes it in a different order.
+    </p>
+
+<pre>
+SELECT
+FROM
+JOIN
+WHERE
+GROUP BY
+HAVING
+SELECT
+DISTINCT
+ORDER BY
+LIMIT / TOP
+</pre>
+
+    <p><strong>Example:</strong></p>
+
+<pre>
+SELECT department,
+       COUNT(*)
+FROM employees
+WHERE salary > 50000
+GROUP BY department
+HAVING COUNT(*) > 5
+ORDER BY department;
+</pre>
+
+    <p>
+      First rows are filtered using WHERE, then grouped using GROUP BY,
+      then HAVING filters groups, then SELECT is processed and finally
+      ORDER BY sorts the output.
+    </p>
+
+    <hr>
+
+    <h4>2. Types of Joins</h4>
+
+    <p><strong>Inner Join</strong></p>
+
+    <p>
+      Returns only matching records from both tables.
+    </p>
+
+<pre>
+SELECT *
+FROM customers c
+INNER JOIN orders o
+ON c.customer_id = o.customer_id;
+</pre>
+
+    <p><strong>Left Join</strong></p>
+
+    <p>
+      Returns all records from left table and matching records from right table.
+    </p>
+
+<pre>
+SELECT *
+FROM customers c
+LEFT JOIN orders o
+ON c.customer_id = o.customer_id;
+</pre>
+
+    <p><strong>Right Join</strong></p>
+
+    <p>
+      Returns all records from right table and matching records from left table.
+    </p>
+
+    <p><strong>Full Outer Join</strong></p>
+
+    <p>
+      Returns all matching and non-matching records from both tables.
+    </p>
+
+    <p><strong>Cross Join</strong></p>
+
+    <p>
+      Returns Cartesian Product of both tables.
+    </p>
+
+    <p><strong>Self Join</strong></p>
+
+    <p>
+      A table joined with itself.
+    </p>
+
+    <p><strong>Semi Join</strong></p>
+
+    <p>
+      Returns rows from the left table only when a match exists in the right table.
+      Usually implemented using EXISTS.
+    </p>
+
+<pre>
+SELECT *
+FROM customers c
+WHERE EXISTS (
+    SELECT 1
+    FROM orders o
+    WHERE c.customer_id = o.customer_id
+);
+</pre>
+
+    <p>
+      Real-time example:
+      Find customers who have placed at least one order.
+    </p>
+
+    <p><strong>Anti Join</strong></p>
+
+    <p>
+      Returns rows from the left table when no matching record exists in the right table.
+      Usually implemented using NOT EXISTS.
+    </p>
+
+<pre>
+SELECT *
+FROM customers c
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM orders o
+    WHERE c.customer_id = o.customer_id
+);
+</pre>
+
+    <p>
+      Real-time example:
+      Find customers who never placed an order.
+    </p>
+
+    <hr>
+
+    <h4>3. Common Table Expression (CTE)</h4>
+
+<pre>
+WITH dept_salary AS (
+    SELECT department,
+           AVG(salary) avg_salary
+    FROM employees
+    GROUP BY department
+)
+SELECT *
+FROM dept_salary;
+</pre>
+
+    <p>
+      A CTE is a temporary result set that exists only during query execution.
+    </p>
+
+    <p><strong>When do we use it?</strong></p>
+
+    <ul>
+      <li>Breaking complex queries into smaller readable steps.</li>
+      <li>Recursive queries.</li>
+      <li>Avoiding repeated subqueries.</li>
+    </ul>
+
+    <p><strong>Real Project Example:</strong></p>
+
+    <p>
+      While building AML or Banking reports, I use CTEs to separate filtering,
+      aggregation and ranking logic into multiple readable steps instead of
+      writing one huge query.
+    </p>
+
+    <hr>
+
+    <h4>4. CTAS (Create Table As Select)</h4>
+
+<pre>
+CREATE TABLE employee_backup AS
+SELECT *
+FROM employees;
+</pre>
+
+    <p>
+      CTAS creates a new table and loads data into it in a single statement.
+    </p>
+
+    <p><strong>When do we use it?</strong></p>
+
+    <ul>
+      <li>Creating staging tables.</li>
+      <li>Performance optimization.</li>
+      <li>Snapshot creation.</li>
+      <li>Large-scale ETL processing.</li>
+    </ul>
+
+    <p><strong>Real Project Example:</strong></p>
+
+    <p>
+      In Synapse and Databricks projects, CTAS is often used to create
+      optimized reporting tables after transformations are completed.
+    </p>
+
+    <hr>
+
+    <h4>5. View</h4>
+
+<pre>
+CREATE VIEW vw_employee_details AS
+SELECT employee_id,
+       employee_name,
+       department
+FROM employees;
+</pre>
+
+    <p>
+      A View is a virtual table built from a query.
+      It stores SQL logic but not the actual data.
+    </p>
+
+    <p><strong>When do we use it?</strong></p>
+
+    <ul>
+      <li>Hide complex joins.</li>
+      <li>Provide data abstraction.</li>
+      <li>Restrict sensitive columns.</li>
+      <li>Create reusable reporting layers.</li>
+    </ul>
+
+    <p><strong>Real Project Example:</strong></p>
+
+    <p>
+      Business users should not see 15 joined tables.
+      We create a view and allow them to query a single object.
+    </p>
+
+    <hr>
+
+    <h4>6. Stored Procedure</h4>
+
+<pre>
+CREATE PROCEDURE GetEmployeeByDept
+    @Dept VARCHAR(50)
+AS
+BEGIN
+    SELECT *
+    FROM employees
+    WHERE department = @Dept;
+END;
+</pre>
+
+    <p>
+      A Stored Procedure is a reusable set of SQL statements stored inside the database.
+    </p>
+
+    <p><strong>When do we use it?</strong></p>
+
+    <ul>
+      <li>Automating business processes.</li>
+      <li>Parameterized execution.</li>
+      <li>Reusable database logic.</li>
+      <li>Scheduling database operations.</li>
+    </ul>
+
+    <p><strong>Real Project Example:</strong></p>
+
+    <p>
+      Monthly reconciliation, regulatory reporting and batch processing
+      jobs are often implemented using stored procedures.
+    </p>
+
+    <hr>
+
+    <h4>7. Index</h4>
+
+<pre>
+CREATE INDEX idx_customer_id
+ON customers(customer_id);
+</pre>
+
+    <p>
+      An Index is a database object used to improve query performance
+      by reducing the amount of data scanned.
+    </p>
+
+    <p><strong>Without Index</strong></p>
+
+    <p>
+      Database performs Full Table Scan.
+    </p>
+
+    <p><strong>With Index</strong></p>
+
+    <p>
+      Database directly locates matching rows.
+    </p>
+
+    <p><strong>When should we create indexes?</strong></p>
+
+    <ul>
+      <li>Frequently filtered columns.</li>
+      <li>Join columns.</li>
+      <li>Primary key columns.</li>
+      <li>Frequently searched columns.</li>
+    </ul>
+
+    <p><strong>Important Note:</strong></p>
+
+    <p>
+      Too many indexes improve reads but slow down inserts,
+      updates and deletes because indexes also need maintenance.
+    </p>
+
+  </div>
+</div> -->
+
+
+<div class="q-card">
+  <div class="q-header" onclick="toggle(this)">
+    <div class="q-num">1</div>
+    <div class="q-title-wrap">
+      <div class="q-title">Walk me through SQL query execution order, types of joins, and the differences between CTE, CTAS, Views &amp; Stored Procedures</div>
+      <div class="q-tags"><span class="q-tag tag-fund">SQL Fundamentals</span><span class="q-tag tag-code">Core Concept</span></div>
+    </div>
+    <div class="q-chevron">▼</div>
+  </div>
+  <div class="q-body">
+
+    <p><strong>1. SQL Execution Order</strong></p>
+    <p>Even though we write a query as SELECT → FROM → WHERE → GROUP BY → HAVING → ORDER BY, that's not how the database actually runs it. The database executes it almost in the reverse order:</p>
+    <div class="schema-box">
+      <strong>Logical execution order:</strong><br>
+      <code>FROM</code> → <code>JOIN</code> → <code>WHERE</code> → <code>GROUP BY</code> → <code>HAVING</code> → <code>SELECT</code> → <code>DISTINCT</code> → <code>ORDER BY</code> → <code>LIMIT</code>
+    </div>
+    <p>First the database figures out <strong>which tables</strong> to read and joins them (FROM/JOIN), then it <strong>filters rows</strong> before grouping (WHERE), then it <strong>groups</strong> the data (GROUP BY), then it <strong>filters the groups</strong> (HAVING — that's why HAVING can use aggregate functions but WHERE can't), then it picks the <strong>columns to display</strong> (SELECT), and finally <strong>sorts and limits</strong> the result (ORDER BY, LIMIT).</p>
+    <div class="callout tip"><span class="callout-icon">💡</span><div>This is exactly why you can't use a column alias defined in SELECT inside a WHERE clause — WHERE runs before SELECT even exists yet.</div></div>
+<hr>
+    <p><strong>2. Types of Joins</strong></p>
+    <p>Joins combine rows from two tables based on a related column. Here's how I'd explain each one:</p>
+    <ul>
+      <li><strong>INNER JOIN:</strong> Returns only the matching rows from both tables. If a customer has no orders, that customer won't show up at all.</li>
+      <li><strong>LEFT JOIN (LEFT OUTER):</strong> Returns all rows from the left table, plus matching rows from the right table. If there's no match, right-side columns come back as NULL. I use this when I want "all customers, and their orders if they have any."</li>
+      <li><strong>RIGHT JOIN (RIGHT OUTER):</strong> Same as LEFT JOIN but flipped — all rows from the right table, matched with the left. In practice I almost never use this — I just swap the table order and use LEFT JOIN, it's easier to read.</li>
+      <li><strong>FULL OUTER JOIN:</strong> Returns everything from both tables — matched rows, plus unmatched rows from either side filled with NULLs. Useful when I want to find mismatches in both directions, like reconciling two datasets.</li>
+      <li><strong>CROSS JOIN:</strong> Produces the Cartesian product — every row from table A combined with every row from table B. I rarely use this intentionally; usually it shows up by accident when a join condition is missing, and it can blow up your row count fast.</li>
+      <li><strong>SELF JOIN:</strong> A table joined with itself, using aliases. I've used this for hierarchical data — like finding an employee's manager, where both employee and manager are in the same Employees table.</li>
+      <li><strong>LEFT SEMI JOIN:</strong> This is a Spark/PySpark concept — it returns only the columns from the left table where a match exists in the right table, but it never duplicates rows even if there are multiple matches on the right. It's basically an "EXISTS" check. I'd use it when I want to filter customers who placed at least one order, but I don't care about order details.
+     
+
+        <div class="split-grid">
+          <div class="split-pane sql-pane-card">
+            <div class="split-pane-header">&#x1F5C4; SQL</div>
+    <pre><code class="language-sql">SELECT *
+FROM customers c
+WHERE EXISTS (
+    SELECT 1
+    FROM orders o
+    WHERE c.customer_id = o.customer_id);</code></pre></div></div>
+
+        
+        
+    
+      </li>
+      <li><strong>LEFT ANTI JOIN:</strong> The opposite of semi join — returns rows from the left table that have <strong>no match</strong> in the right table. I use this a lot for finding "customers who never placed an order" or "records in source but missing in target" — a classic data validation check.
+      <div class="split-grid">
+          <div class="split-pane sql-pane-card">
+            <div class="split-pane-header">&#x1F5C4; SQL</div>
+    <pre><code class="language-sql">SELECT *
+FROM customers c
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM orders o
+    WHERE c.customer_id = o.customer_id);</code></pre></div></div></li>
+    </ul>
+    <div class="callout info"><span class="callout-icon">📌</span><div>In plain SQL, semi/anti joins are written using <code>EXISTS</code> / <code>NOT EXISTS</code> or <code>IN</code> / <code>NOT IN</code>. In PySpark, they're literal join types: <code>df1.join(df2, "id", "left_semi")</code> and <code>df1.join(df2, "id", "left_anti")</code>.</div></div>
+<hr>
+    <p><strong>3. CTE, CTAS, Views &amp; Stored Procedures</strong></p>
+    <p>These all help organize and reuse SQL logic, but they solve different problems — I usually explain them by when I'd reach for each one.</p>
+
+    <p><strong>CTE (Common Table Expression)</strong> — a temporary, named result set that exists only for the duration of one query. I use this to break a complex query into readable steps, especially before a final SELECT or before a window function.</p>
+    <div class="split-grid">
+          <div class="split-pane sql-pane-card">
+            <div class="split-pane-header">&#x1F5C4; SQL</div>
+    <pre><code class="language-sql">WITH high_value_customers AS (
+    SELECT customer_id, SUM(amount) AS total_spent
+    FROM orders
+    GROUP BY customer_id
+    HAVING SUM(amount) > 10000
+)
+SELECT c.customer_id, c.name, h.total_spent
+FROM customers c
+JOIN high_value_customers h ON c.customer_id = h.customer_id;</code></pre></div></div>
+    <p><em>When I'd use it:</em> When my query is getting deeply nested with subqueries and hard to read, or when I need to reference the same derived result multiple times in one query (recursive CTEs are also great for hierarchies like org charts).</p>
+<hr>
+    <p><strong>CTAS (Create Table As Select)</strong> — physically creates a new table and populates it with the result of a query. Unlike a CTE, this data is persisted on disk.</p>
+    
+    <div class="split-grid">
+          <div class="split-pane sql-pane-card">
+            <div class="split-pane-header">&#x1F5C4; SQL</div>
+    <pre><code class="language-sql">CREATE TABLE high_value_customers AS
+SELECT customer_id, SUM(amount) AS total_spent
+FROM orders
+GROUP BY customer_id
+HAVING SUM(amount) > 10000;</code></pre></div></div>
+    <p><em>When I'd use it:</em> When a calculation is expensive and I don't want to recompute it every time — like building a Gold layer summary table in a lakehouse. I've used CTAS in Synapse to materialize aggregated tables for Power BI so the dashboard doesn't hit raw data every time.</p>
+<hr>
+    <p><strong>View</strong> — a saved, named query that doesn't store data itself. Every time you query the view, it runs the underlying SQL fresh (unless it's a materialized view).</p>
+    
+    <div class="split-grid">
+          <div class="split-pane sql-pane-card">
+            <div class="split-pane-header">&#x1F5C4; SQL</div>
+    <pre><code class="language-sql">CREATE VIEW vw_high_value_customers AS
+SELECT customer_id, SUM(amount) AS total_spent
+FROM orders
+GROUP BY customer_id
+HAVING SUM(amount) > 10000;
+
+-- usage
+SELECT * FROM vw_high_value_customers WHERE total_spent > 50000;</code></pre></div></div>
+    <p><em>When I'd use it:</em> When I want to give analysts or BI tools a simplified, reusable, always-up-to-date interface to complex logic, without duplicating storage. The tradeoff vs CTAS is — a view is always fresh but recomputes every time, while CTAS is fast to read but can go stale until refreshed.</p>
+<hr>
+    <p><strong>Stored Procedure</strong> — a saved block of SQL code (can include logic, loops, conditions, multiple statements) that you call by name. Unlike a view, it doesn't have to return a result set — it can perform actions like inserts, updates, or even call other procedures.</p>
+    
+    <div class="split-grid">
+          <div class="split-pane sql-pane-card">
+            <div class="split-pane-header">&#x1F5C4; SQL</div>
+    <pre><code class="language-sql">CREATE PROCEDURE usp_refresh_customer_summary
+AS
+BEGIN
+    TRUNCATE TABLE customer_summary;
+
+    INSERT INTO customer_summary
+    SELECT customer_id, SUM(amount) AS total_spent
+    FROM orders
+    GROUP BY customer_id;
+END;
+
+-- usage
+EXEC usp_refresh_customer_summary;</code></pre></div></div>
+    <p><em>When I'd use it:</em> When I need to encapsulate a multi-step process — like truncate-and-reload logic, or a batch job that does validation, then transformation, then logging — and trigger it as a single callable unit, often from an ADF pipeline via a Stored Procedure activity.</p>
+
+    <div class="callout tip"><span class="callout-icon">📌</span><div><strong>Quick way to remember the difference:</strong> CTE = temporary, query-scoped shortcut. View = saved query, no storage. CTAS = saved query, with storage (a real table). Stored Procedure = saved multi-step logic/actions, can do more than just SELECT.</div></div>
+
+    <p><strong>4. Indexes</strong></p>
+    <p>An index is like a sorted lookup structure that lets the database find rows without scanning the entire table — similar to an index at the back of a book.</p>
+    <ul>
+      <li><strong>Clustered Index:</strong> Determines the physical order of data in the table. There can be only one per table (because data can only be physically sorted one way). In SQL Server, the primary key creates a clustered index by default.</li>
+      <li><strong>Non-Clustered Index:</strong> A separate structure that holds the indexed column(s) plus a pointer back to the actual row. You can have many of these on one table. I'd add these on columns that are frequently used in WHERE clauses or JOIN conditions but aren't the primary key.</li>
+      <li><strong>Composite Index:</strong> An index on multiple columns together — useful when queries always filter on the same combination of columns, like <code>(customer_id, order_date)</code>.</li>
+      <li><strong>Unique Index:</strong> Enforces that no two rows have the same value in that column, while also speeding up lookups.</li>
+    </ul>
+    <p><em>When I'd use indexes:</em> On columns I frequently filter, join, or sort by — especially foreign keys and date columns in large fact tables. The tradeoff is that indexes speed up reads but slow down writes (every INSERT/UPDATE/DELETE has to update the index too), so I avoid over-indexing staging or heavily-written tables.</p>
+    <div class="callout warn"><span class="callout-icon">⚠️</span><div>In Synapse Dedicated Pools, the equivalent concept is the <strong>Clustered Columnstore Index (CCI)</strong> — used by default on large fact tables for analytical workloads, since it compresses data column-wise and speeds up aggregations rather than single-row lookups.</div></div>
+
+  </div>
+</div>
+
+
+
    <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">1</div><div class="q-title-wrap"><div class="q-title">Indexes in SQL — types, internals, when to use / avoid</div><div class="q-tags"><span class="q-tag tag-perf">Indexes</span><span class="q-tag tag-fund">Core Concept</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">2</div><div class="q-title-wrap"><div class="q-title">Indexes in SQL — types, internals, when to use / avoid</div><div class="q-tags"><span class="q-tag tag-perf">Indexes</span><span class="q-tag tag-fund">Core Concept</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p>An index is a separate data structure (B-tree or other) that stores a sorted copy of one or more columns with pointers to original rows. It converts O(n) table scans into O(log n) lookups.</p>
       <p><strong>Types:</strong></p>
@@ -2129,7 +2619,7 @@ result = big.join(small, "key_s").drop("salt", "key_s")</code></pre>
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">2</div><div class="q-title-wrap"><div class="q-title">How would you optimize a slow SQL query? What steps and tools do you use?</div><div class="q-tags"><span class="q-tag tag-perf">Performance</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">3</div><div class="q-title-wrap"><div class="q-title">How would you optimize a slow SQL query? What steps and tools do you use?</div><div class="q-tags"><span class="q-tag tag-perf">Performance</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <ol>
         <li><strong>Read the execution plan first:</strong> <code>EXPLAIN ANALYZE SELECT ...</code> — look for full table scans, sort operations, nested loops, and large gaps between estimated and actual row counts.</li>
@@ -2145,7 +2635,7 @@ result = big.join(small, "key_s").drop("salt", "key_s")</code></pre>
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">3</div><div class="q-title-wrap"><div class="q-title">Explain database indexing and its impact on performance.</div><div class="q-tags"><span class="q-tag tag-fund">Fundamentals</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">4</div><div class="q-title-wrap"><div class="q-title">Explain database indexing and its impact on performance.</div><div class="q-tags"><span class="q-tag tag-fund">Fundamentals</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p>An index is a separate data structure (usually a B-tree) that stores a sorted copy of one or more columns along with pointers to the original rows. Instead of scanning every row, the database finds matching rows in O(log n) time.</p>
       <ul>
@@ -2159,9 +2649,12 @@ result = big.join(small, "key_s").drop("salt", "key_s")</code></pre>
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">4</div><div class="q-title-wrap"><div class="q-title">Explain the MERGE statement. How is it different from UPSERT?</div><div class="q-tags"><span class="q-tag tag-code">Code</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">5</div><div class="q-title-wrap"><div class="q-title">Explain the MERGE statement. How is it different from UPSERT?</div><div class="q-tags"><span class="q-tag tag-code">Code</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p>UPSERT is a concept: insert if a record doesn't exist, update if it does. MERGE is the SQL statement that implements this — and more. MERGE is a superset of UPSERT — it can handle UPDATE, INSERT, and DELETE in one atomic statement.</p>
+      <div class="split-grid">
+          <div class="split-pane sql-pane-card">
+            <div class="split-pane-header">&#x1F5C4; SQL</div>
       <pre><code class="language-sql">MERGE INTO target_table AS t
 USING source_table AS s
 ON t.order_id = s.order_id
@@ -2171,14 +2664,17 @@ WHEN NOT MATCHED BY TARGET THEN
     INSERT (order_id, amount, created_at)
     VALUES (s.order_id, s.amount, GETDATE())
 WHEN NOT MATCHED BY SOURCE THEN
-    DELETE;  -- rows in target not in source → delete</code></pre>
+    DELETE;  -- rows in target not in source → delete</code></pre></div></div>
       <p>The <code>WHEN NOT MATCHED BY SOURCE THEN DELETE</code> clause goes beyond UPSERT — it's a full sync that removes rows from target that no longer exist in source. MERGE is atomic — either all three operations succeed or none do.</p>
     </div>
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">5</div><div class="q-title-wrap"><div class="q-title">Write a SQL approach to identify duplicate records using multiple columns.</div><div class="q-tags"><span class="q-tag tag-code">Code</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">6</div><div class="q-title-wrap"><div class="q-title">Write a SQL approach to identify duplicate records using multiple columns.</div><div class="q-tags"><span class="q-tag tag-code">Code</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
+    <div class="split-grid">
+          <div class="split-pane sql-pane-card">
+            <div class="split-pane-header">&#x1F5C4; SQL</div>
       <pre><code class="language-sql">-- Method 1: Find groups with duplicates
 SELECT order_id, customer_id, product_id, COUNT(*) AS duplicate_count
 FROM orders
@@ -2201,14 +2697,17 @@ WITH ranked AS (
             ORDER BY created_at DESC) AS rn
     FROM orders
 )
-DELETE FROM orders WHERE id IN (SELECT id FROM ranked WHERE rn > 1);</code></pre>
+DELETE FROM orders WHERE id IN (SELECT id FROM ranked WHERE rn > 1);</code></pre></div></div>
     </div>
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">6</div><div class="q-title-wrap"><div class="q-title">Write a SQL query to find consecutive login days for users.</div><div class="q-tags"><span class="q-tag tag-code">Code</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">7</div><div class="q-title-wrap"><div class="q-title">Write a SQL query to find consecutive login days for users.</div><div class="q-tags"><span class="q-tag tag-code">Code</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <div class="callout info"><span class="callout-icon">&#x1F4A1;</span><div>Key insight: if logins are consecutive, <code>date - ROW_NUMBER()</code> produces the same constant value for all days in a streak. That constant becomes the group key.</div></div>
+      <div class="split-grid">
+          <div class="split-pane sql-pane-card">
+            <div class="split-pane-header">&#x1F5C4; SQL</div>
       <pre><code class="language-sql">WITH deduped AS (
     -- Remove duplicate logins on the same day
     SELECT DISTINCT user_id, CAST(login_time AS DATE) AS login_date
@@ -2232,14 +2731,17 @@ SELECT
 FROM grouped
 GROUP BY user_id, streak_group
 HAVING COUNT(*) > 1  -- only streaks of 2+ days
-ORDER BY consecutive_days DESC;</code></pre>
+ORDER BY consecutive_days DESC;</code></pre></div></div>
     </div>
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">7</div><div class="q-title-wrap"><div class="q-title">How would you implement data masking in Azure SQL for sensitive columns?</div><div class="q-tags"><span class="q-tag tag-sec">Security</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">8</div><div class="q-title-wrap"><div class="q-title">How would you implement data masking in Azure SQL for sensitive columns?</div><div class="q-tags"><span class="q-tag tag-sec">Security</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <p><strong>Dynamic Data Masking (DDM)</strong> is applied at the column definition level. Users without the UNMASK permission see masked values. Data is not changed on disk — masking is applied at query time.</p>
+      <div class="split-grid">
+          <div class="split-pane sql-pane-card">
+            <div class="split-pane-header">&#x1F5C4; SQL</div>
       <pre><code class="language-sql">-- Add masking to existing columns
 ALTER TABLE customers ALTER COLUMN email
     ADD MASKED WITH (FUNCTION = 'email()');            -- aXXX@XXXX.com
@@ -2251,7 +2753,7 @@ ALTER TABLE customers ALTER COLUMN salary
     ADD MASKED WITH (FUNCTION = 'default()');          -- 0 for numbers
 
 -- Grant unmask to privileged role
-GRANT UNMASK ON customers TO data_engineer_role;</code></pre>
+GRANT UNMASK ON customers TO data_engineer_role;</code></pre></div></div>
       <div class="callout warn"><span class="callout-icon">&#x26A0;&#xFE0F;</span><div>DDM does not protect against WHERE clause inference attacks (<code>WHERE salary = 75000</code> still works). Combine with Column-Level Security (DENY SELECT on specific columns) for complete protection.</div></div>
     </div>
   </div>
@@ -2259,7 +2761,7 @@ GRANT UNMASK ON customers TO data_engineer_role;</code></pre>
  
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">8</div><div class="q-title-wrap"><div class="q-title">Find employees and their department names — include employees with no department assigned (LEFT JOIN)</div><div class="q-tags"><span class="q-tag tag-code">JOIN</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">9</div><div class="q-title-wrap"><div class="q-title">Find employees and their department names — include employees with no department assigned (LEFT JOIN)</div><div class="q-tags"><span class="q-tag tag-code">JOIN</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <div class="schema-box">
         <strong>employees:</strong> <code>employee_id</code>, <code>name</code>, <code>department_id</code><br>
@@ -2313,7 +2815,7 @@ no_dept.show()
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">9</div><div class="q-title-wrap"><div class="q-title">3-day moving average of units sold per product from a daily sales table</div><div class="q-tags"><span class="q-tag tag-code">Moving Average</span><span class="q-tag tag-pattern">Window Function</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">10</div><div class="q-title-wrap"><div class="q-title">3-day moving average of units sold per product from a daily sales table</div><div class="q-tags"><span class="q-tag tag-code">Moving Average</span><span class="q-tag tag-pattern">Window Function</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <div class="schema-box">
         <strong>daily_sales:</strong> <code>sale_date</code> (DATE), <code>product_id</code>, <code>units_sold</code> (INT)
@@ -2369,7 +2871,7 @@ result.select("sale_date","product_id","units_sold","moving_avg_3d").show()
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">10</div><div class="q-title-wrap"><div class="q-title">Find consecutive login days for employees (the "streak" problem)</div><div class="q-tags"><span class="q-tag tag-code">Consecutive Records</span><span class="q-tag tag-pattern">Window Function</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">11</div><div class="q-title-wrap"><div class="q-title">Find consecutive login days for employees (the "streak" problem)</div><div class="q-tags"><span class="q-tag tag-code">Consecutive Records</span><span class="q-tag tag-pattern">Window Function</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <div class="schema-box">
         <strong>employee_logins:</strong> <code>employee_id</code>, <code>login_date</code> (DATE)
@@ -2450,7 +2952,7 @@ streaks.show()
   </div>
 
   <div class="q-card">
-    <div class="q-header" onclick="toggle(this)"><div class="q-num">11</div><div class="q-title-wrap"><div class="q-title">Find the second most recent login for every user using Window functions</div><div class="q-tags"><span class="q-tag tag-code">Window Function</span><span class="q-tag tag-pattern">LAG / ROW_NUMBER</span></div></div><div class="q-chevron">▼</div></div>
+    <div class="q-header" onclick="toggle(this)"><div class="q-num">12</div><div class="q-title-wrap"><div class="q-title">Find the second most recent login for every user using Window functions</div><div class="q-tags"><span class="q-tag tag-code">Window Function</span><span class="q-tag tag-pattern">LAG / ROW_NUMBER</span></div></div><div class="q-chevron">▼</div></div>
     <div class="q-body">
       <div class="split-grid">
         <div class="split-pane sql-pane-card">
